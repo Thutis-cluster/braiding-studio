@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Luxe Braids Studio Booking</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #fdf6f0;
+      color: #4b3f36;
+    }
+
+    /* Progress bar */
+    .progress-container {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 20px;
+      background: #fff5f0;
+    }
+    .progress-step {
+      width: 20%;
+      height: 6px;
+      background: #e0d5cc;
+      border-radius: 3px;
+      transition: background 0.3s;
+    }
+    .progress-step.active {
+      background: #f5b7a3;
+    }
+
+    /* Screen styling */
+    .screen {
+      display: none;
+      padding: 20px;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+    .active {
+      display: block;
+    }
+
+    h1, h2 {
+      margin: 10px 0;
+    }
+
+    /* Buttons */
+    .button {
+      display: inline-block;
+      padding: 12px 20px;
+      margin: 10px 0;
+      background-color: #f5b7a3;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      text-align: center;
+      width: 100%;
+    }
+
+    /* Style Cards */
+    .style-card {
+      background: #fff0e6;
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .style-card img {
+      width: 100%;
+      border-radius: 6px;
+      margin-bottom: 8px;
+    }
+
+    /* Inputs */
+    input, select, textarea {
+      width: 100%;
+      padding: 10px;
+      margin: 6px 0;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+
+    .sticky {
+      position: fixed;
+      bottom: 10px;
+      left: 10px;
+      right: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Progress Bar -->
+<div class="progress-container">
+  <div id="step1" class="progress-step active"></div>
+  <div id="step2" class="progress-step"></div>
+  <div id="step3" class="progress-step"></div>
+  <div id="step4" class="progress-step"></div>
+  <div id="step5" class="progress-step"></div>
+</div>
+
+<!-- Screen 1: Home -->
+<div id="home" class="screen active">
+  <h1>Luxe Braids Studio</h1>
+  <p>Professional braiding services in [City]</p>
+  <button class="button sticky" onclick="showScreen('styles', 2)">Book Appointment</button>
+</div>
+
+<!-- Screen 2: Select Style -->
+<div id="styles" class="screen">
+  <h2>Select Your Style</h2>
+  <div class="style-card">
+    <img src="https://via.placeholder.com/300x150" alt="Box Braids">
+    <p>Box Braids - $120</p>
+    <button class="button" onclick="showScreen('date', 3)">Book This Style</button>
+  </div>
+  <div class="style-card">
+    <img src="https://via.placeholder.com/300x150" alt="Knotless Braids">
+    <p>Knotless Braids - $150</p>
+    <button class="button" onclick="showScreen('date', 3)">Book This Style</button>
+  </div>
+  <button class="button" onclick="showScreen('home', 1)">Back</button>
+</div>
+
+<!-- Screen 3: Date & Time -->
+<div id="date" class="screen">
+  <h2>Pick Date & Time</h2>
+  <input type="date" />
+  <select>
+    <option>10:00 AM</option>
+    <option>11:30 AM</option>
+    <option>1:00 PM</option>
+  </select>
+  <button class="button" onclick="showScreen('client', 4)">Next: Client Info</button>
+  <button class="button" onclick="showScreen('styles', 2)">Back</button>
+</div>
+
+<!-- Screen 4: Client Info & Deposit -->
+<div id="client" class="screen">
+  <h2>Your Details</h2>
+  <input type="text" placeholder="Full Name">
+  <input type="tel" placeholder="Phone">
+  <input type="email" placeholder="Email">
+  <textarea placeholder="Hair length / Notes"></textarea>
+  <p>Deposit: $25 (applied to final price)</p>
+  <button class="button" onclick="showScreen('confirmation', 5)">Pay & Book</button>
+  <button class="button" onclick="showScreen('date', 3)">Back</button>
+</div>
+
+<!-- Screen 5: Confirmation -->
+<div id="confirmation" class="screen">
+  <h2>✅ Booking Confirmed!</h2>
+  <p>Style: Knotless Braids</p>
+  <p>Date: Wed, Jan 10  Time: 11:30 AM</p>
+  <p>Stylist: Maya</p>
+  <p>Deposit Paid: $25  Remaining: $125</p>
+  <p>Hair Prep: Wash & dry hair before appointment</p>
+  <p>Cancellation: 24h notice required</p>
+  <button class="button">Add to Calendar</button>
+  <button class="button" onclick="showScreen('styles', 2)">Book Another</button>
+</div>
+
+<script>
+  function showScreen(screenId, step) {
+    const screens = document.querySelectorAll('.screen');
+    screens.forEach(s => s.classList.remove('active'));
+    document.getElementById(screenId).classList.add('active');
+
+    // Update progress bar
+    for (let i = 1; i <= 5; i++) {
+      document.getElementById('step'+i).classList.remove('active');
+    }
+    for (let i = 1; i <= step; i++) {
+      document.getElementById('step'+i).classList.add('active');
+    }
+
+    window.scrollTo(0,0);
+  }
+</script>
+
+</body>
+</html>
