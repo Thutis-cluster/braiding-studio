@@ -131,7 +131,9 @@ body {
   <input placeholder="Full Name">
   <input placeholder="Phone">
   <input type="email" placeholder="Email">
-  <button class="button" onclick="saveBooking()">Confirm Booking</button>
+<button class="button" onclick="saveBookingToFirebase()">
+  Confirm Booking
+</button>
   <button class="button" onclick="sendWhatsApp()">Send Booking on WhatsApp</button>
 </div>
 
@@ -287,6 +289,27 @@ function updateBookingStatus(status) {
   const auth = firebase.auth();
 
     console.log("Firebase connected:", firebase.apps.length > 0);
+
+  function saveBookingToFirebase() {
+  const booking = {
+    style: selectedStyle,
+    length: selectedLength,
+    price: selectedPrice,
+    status: "Pending",
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+
+  db.collection("bookings").add(booking)
+    .then(() => {
+      alert("Booking submitted! Status: Pending");
+      showScreen("confirmation", 5);
+    })
+    .catch((error) => {
+      alert("Error saving booking");
+      console.error(error);
+    });
+}
+  
 </script>
 
   <!-- Firebase SDKs -->
