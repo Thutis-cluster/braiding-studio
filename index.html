@@ -120,6 +120,7 @@ body {
   <select>
     <option>10:00</option>
     <option>11:30</option>
+    <option>1:00 PM</option>
   </select>
   <button class="button" onclick="showScreen('client',4)">Next</button>
 </div>
@@ -129,7 +130,9 @@ body {
   <h2>Your Details</h2>
   <input placeholder="Full Name">
   <input placeholder="Phone">
+  <input type="email" placeholder="Email">
   <button class="button" onclick="showScreen('confirmation',5)">Confirm</button>
+  <button class="button" onclick="sendWhatsApp()">Send Booking on WhatsApp</button>
 </div>
 
 <!-- Confirmation -->
@@ -138,6 +141,7 @@ body {
   <p>Style: <span id="cStyle"></span></p>
   <p>Length: <span id="cLength"></span></p>
   <p>Total: R<span id="cPrice"></span></p>
+  <p>Hair Prep: Wash & dry hair before appointment</p> <p>Cancellation: 24h notice required</p>
   <button class="button" onclick="showScreen('home',1)">Done</button>
 </div>
 
@@ -182,6 +186,24 @@ function selectLength(length) {
   selectedPrice = prices[selectedStyle][length];
   showScreen('date',4);
 }
+
+  function sendWhatsApp() {
+  const phoneNumber = "27794380103"; // <-- replace with YOUR WhatsApp number
+
+  const message =
+    "Hello Mumsy Braids Studio,%0A%0A" +
+    "I would like to book an appointment.%0A%0A" +
+    "Style: " + selectedStyle + "%0A" +
+    "Length: " + selectedLength + "%0A" +
+    "Total Price: R" + selectedPrice + "%0A%0A" +
+    "Thank you.";
+
+  window.open(
+    "https://wa.me/" + phoneNumber + "?text=" + message,
+    "_blank"
+  );
+}
+
 </script>
 
 </body>
