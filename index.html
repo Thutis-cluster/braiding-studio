@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mumsy Braids Studio Booking</title>
 
+    <!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
 <style>
 body {
   font-family: Arial, sans-serif;
@@ -187,12 +192,9 @@ function showScreen(id, step) {
   }
 
 if (id === 'confirmation') {
-  const booking = JSON.parse(localStorage.getItem("latestBooking"));
-
-  document.getElementById('cStyle').textContent = booking.style;
-  document.getElementById('cLength').textContent = booking.length;
-  document.getElementById('cPrice').textContent = booking.price;
-  document.getElementById('bookingStatus').textContent = booking.status;
+  document.getElementById('cStyle').textContent = selectedStyle;
+  document.getElementById('cLength').textContent = selectedLength;
+  document.getElementById('cPrice').textContent = selectedPrice;
 }
 }
 
@@ -208,21 +210,6 @@ function selectLength(length) {
   selectedLength = length;
   selectedPrice = prices[selectedStyle][length];
   showScreen('date',4);
-}
-
-  function saveBooking() {
-  bookingStatus = "Pending";
-
-  const booking = {
-    style: selectedStyle,
-    length: selectedLength,
-    price: selectedPrice,
-    status: bookingStatus
-  };
-
-  localStorage.setItem("latestBooking", JSON.stringify(booking));
-
-  showScreen('confirmation', 5);
 }
 
   function sendWhatsApp() {
@@ -311,11 +298,6 @@ function updateBookingStatus(status) {
 }
   
 </script>
-
-  <!-- Firebase SDKs -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
 </body>
 </html>
