@@ -122,12 +122,38 @@
   <div class="style-card">
     <img src="images/IMG-20251228-WA0018.jpg" alt="Knotless Braids">
     <p>Knotless Braids - R180</p>
-    <button class="button" onclick="showScreen('date', 3)">Book This Style</button>
+<button class="button" onclick="showScreen('length', 3)">Book This Style</button>
   </div>
   <button class="button" onclick="showScreen('home', 1)">Back</button>
 </div>
 
-<!-- Screen 3: Date & Time -->
+<!-- Screen 3: Select Length -->
+<div id="length" class="screen">
+  <h2>Select Braid Length</h2>
+  <p>Please choose your preferred braid length. Prices vary by length.</p>
+
+  <div class="style-card">
+    <p><strong>Short Braids</strong></p>
+    <p>Price: R180</p>
+    <button class="button" onclick="selectLength('Short', 180)">Choose Short</button>
+  </div>
+
+  <div class="style-card">
+    <p><strong>Medium Braids</strong></p>
+    <p>Price: R220</p>
+    <button class="button" onclick="selectLength('Medium', 220)">Choose Medium</button>
+  </div>
+
+  <div class="style-card">
+    <p><strong>Long Braids</strong></p>
+    <p>Price: R260</p>
+    <button class="button" onclick="selectLength('Long', 260)">Choose Long</button>
+  </div>
+
+  <button class="button" onclick="showScreen('styles', 2)">Back</button>
+</div>
+  
+<!-- Screen 4: Date & Time -->
 <div id="date" class="screen">
   <h2>Pick Date & Time</h2>
   <input type="date" />
@@ -140,7 +166,7 @@
   <button class="button" onclick="showScreen('styles', 2)">Back</button>
 </div>
 
-<!-- Screen 4: Client Info & Deposit -->
+<!-- Screen 5: Client Info & Deposit -->
 <div id="client" class="screen">
   <h2>Your Details</h2>
   <input type="text" placeholder="Full Name">
@@ -152,10 +178,12 @@
   <button class="button" onclick="showScreen('date', 3)">Back</button>
 </div>
 
-<!-- Screen 5: Confirmation -->
+<!-- Screen :6 Confirmation -->
 <div id="confirmation" class="screen">
   <h2>✅ Booking Confirmed!</h2>
   <p>Style: Knotless Braids</p>
+  <p>Braid Length: <span id="confirmLength"></span></p>
+  <p>Total Price: R<span id="confirmPrice"></span></p>
   <p>Date: Wed, Jan 10  Time: 11:30 AM</p>
   <p>Stylist: Maya</p>
   <p>Deposit Paid: $25  Remaining: $125</p>
@@ -181,6 +209,36 @@
 
     window.scrollTo(0,0);
   }
+
+  let selectedLength = "";
+  let selectedPrice = 0;
+
+  function selectLength(length, price) {
+    selectedLength = length;
+    selectedPrice = price;
+    showScreen('date', 4);
+  }
+
+  function showScreen(screenId, step) {
+  const screens = document.querySelectorAll('.screen');
+  screens.forEach(s => s.classList.remove('active'));
+  document.getElementById(screenId).classList.add('active');
+
+  for (let i = 1; i <= 5; i++) {
+    document.getElementById('step'+i).classList.remove('active');
+  }
+  for (let i = 1; i <= step; i++) {
+    document.getElementById('step'+i).classList.add('active');
+  }
+
+  if (screenId === 'confirmation') {
+    document.getElementById('confirmLength').textContent = selectedLength;
+    document.getElementById('confirmPrice').textContent = selectedPrice;
+  }
+
+  window.scrollTo(0,0);
+}
+
 </script>
 
 </body>
