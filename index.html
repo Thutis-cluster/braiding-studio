@@ -5,60 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mumsy Braids Studio Booking</title>
 
-    <!-- Firebase SDKs -->
+<!-- Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
 <style>
-body {
-  font-family: Arial, sans-serif;
-  margin: 0;
-  background: #fdf6f0;
-  color: #4b3f36;
-}
-
-.progress-container {
-  display: flex;
-  justify-content: space-between;
-  padding: 10px;
-  background: #fff5f0;
-}
-.progress-step {
-  width: 20%;
-  height: 6px;
-  background: #e0d5cc;
-  border-radius: 3px;
-}
-.progress-step.active {
-  background: #f5b7a3;
-}
-
-.screen {
-  display: none;
-  padding: 20px;
-}
-.screen.active {
-  display: block;
-}
-
-.button {
-  width: 100%;
-  padding: 12px;
-  background: #f5b7a3;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  margin: 10px 0;
-  font-size: 16px;
-}
-
-.style-card {
-  background: #fff0e6;
-  padding: 12px;
-  margin: 10px 0;
-  border-radius: 8px;
-}
+body { font-family: Arial, sans-serif; margin:0; background:#fdf6f0; color:#4b3f36; }
+.progress-container { display:flex; justify-content:space-between; padding:10px; background:#fff5f0; }
+.progress-step { width:20%; height:6px; background:#e0d5cc; border-radius:3px; }
+.progress-step.active { background:#f5b7a3; }
+.screen { display:none; padding:20px; }
+.screen.active { display:block; }
+.button { width:100%; padding:12px; background:#f5b7a3; color:white; border:none; border-radius:6px; margin:10px 0; font-size:16px; }
+.style-card { background:#fff0e6; padding:12px; margin:10px 0; border-radius:8px; }
 </style>
 </head>
 
@@ -73,56 +32,31 @@ body {
   <div id="step5" class="progress-step"></div>
 </div>
 
-<!-- Home -->
+<!-- Screens -->
 <div id="home" class="screen active">
   <h1>Mumsy Braids Studio</h1>
   <button class="button" onclick="showScreen('styles',2)">Book Appointment</button>
 </div>
 
-<!-- Styles -->
 <div id="styles" class="screen">
   <h2>Select Style</h2>
-
-  <div class="style-card">
-    <p><strong>Box Braids</strong></p>
-    <button class="button" onclick="selectStyle('Box Braids')">Select</button>
-  </div>
-
-  <div class="style-card">
-    <p><strong>Knotless Braids</strong></p>
-    <button class="button" onclick="selectStyle('Knotless Braids')">Select</button>
-  </div>
-
+  <div class="style-card"><p><strong>Box Braids</strong></p><button class="button" onclick="selectStyle('Box Braids')">Select</button></div>
+  <div class="style-card"><p><strong>Knotless Braids</strong></p><button class="button" onclick="selectStyle('Knotless Braids')">Select</button></div>
   <button class="button" onclick="showScreen('home',1)">Back</button>
 </div>
 
-<!-- Length -->
 <div id="length" class="screen">
   <h2>Select Length</h2>
-
-  <div class="style-card">
-    <p>Short – R<span id="shortPrice"></span></p>
-    <button class="button" onclick="selectLength('Short')">Choose</button>
-  </div>
-
-  <div class="style-card">
-    <p>Medium – R<span id="mediumPrice"></span></p>
-    <button class="button" onclick="selectLength('Medium')">Choose</button>
-  </div>
-
-  <div class="style-card">
-    <p>Long – R<span id="longPrice"></span></p>
-    <button class="button" onclick="selectLength('Long')">Choose</button>
-  </div>
-
+  <div class="style-card"><p>Short – R<span id="shortPrice"></span></p><button class="button" onclick="selectLength('Short')">Choose</button></div>
+  <div class="style-card"><p>Medium – R<span id="mediumPrice"></span></p><button class="button" onclick="selectLength('Medium')">Choose</button></div>
+  <div class="style-card"><p>Long – R<span id="longPrice"></span></p><button class="button" onclick="selectLength('Long')">Choose</button></div>
   <button class="button" onclick="showScreen('styles',2)">Back</button>
 </div>
 
-<!-- Date -->
 <div id="date" class="screen">
   <h2>Date & Time</h2>
-  <input type="date">
-  <select>
+  <input type="date" id="bookingDate">
+  <select id="bookingTime">
     <option>10:00</option>
     <option>11:30</option>
     <option>1:00 PM</option>
@@ -130,174 +64,153 @@ body {
   <button class="button" onclick="showScreen('client',4)">Next</button>
 </div>
 
-<!-- Client -->
 <div id="client" class="screen">
   <h2>Your Details</h2>
-  <input placeholder="Full Name">
-  <input placeholder="Phone">
-  <input type="email" placeholder="Email">
-<button class="button" onclick="saveBookingToFirebase()">
-  Confirm Booking
-</button>
-  <button class="button" onclick="sendWhatsApp()">Send Booking on WhatsApp</button>
+  <input id="clientName" placeholder="Full Name">
+  <input id="clientPhone" placeholder="Phone">
+  <input type="email" id="clientEmail" placeholder="Email">
+  <button class="button" onclick="saveBookingToFirebase()">Confirm Booking</button>
 </div>
 
-<!-- Confirmation -->
 <div id="confirmation" class="screen">
-  <h2>✅ Booking Confirmed</h2>
+  <h2>✅ Booking Submitted</h2>
   <p>Style: <span id="cStyle"></span></p>
   <p>Length: <span id="cLength"></span></p>
   <p>Total: R<span id="cPrice"></span></p>
-  <p>Hair Prep: Wash & dry hair before appointment</p> <p>Cancellation: 24h notice required</p>
-  <p style="color:#a67c52;">
-  ⏳ Your booking is pending approval.
-  You will be contacted once it is accepted.
-</p>
+  <p>Date: <span id="cDate"></span> Time: <span id="cTime"></span></p>
+  <p>Status: <span id="cStatus">Pending</span></p>
+  <p>Hair Prep: Wash & dry hair before appointment</p>
+  <p>Cancellation: 24h notice required</p>
   <button class="button" onclick="showScreen('home',1)">Done</button>
 </div>
 
-  <div id="admin" class="screen">
+<div id="admin" class="screen">
   <h2>Owner Admin Panel</h2>
-
   <p>Status: <strong id="adminStatus"></strong></p>
   <p>Style: <span id="adminStyle"></span></p>
   <p>Length: <span id="adminLength"></span></p>
   <p>Price: R<span id="adminPrice"></span></p>
-
-  <button class="button" onclick="acceptBooking()">✅ Accept</button>
-  <button class="button" onclick="declineBooking()">❌ Decline</button>
+  <p>Date: <span id="adminDate"></span> Time: <span id="adminTime"></span></p>
+  <button class="button" onclick="updateBookingStatus('Accepted')">✅ Accept</button>
+  <button class="button" onclick="updateBookingStatus('Declined')">❌ Decline</button>
 </div>
-
 
 <script>
 let selectedStyle = "";
 let selectedLength = "";
 let selectedPrice = 0;
-let bookingStatus = "Pending";
 
 const prices = {
   "Box Braids": { Short: 180, Medium: 220, Long: 260 },
   "Knotless Braids": { Short: 200, Medium: 250, Long: 300 }
 };
 
+// Firebase config
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_AUTH_DOMAIN",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_BUCKET",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// Screen navigation
 function showScreen(id, step) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
-
-  for (let i = 1; i <= 5; i++) {
-    document.getElementById('step'+i).classList.remove('active');
-  }
-  for (let i = 1; i <= step; i++) {
-    document.getElementById('step'+i).classList.add('active');
-  }
-
-if (id === 'confirmation') {
-  document.getElementById('cStyle').textContent = selectedStyle;
-  document.getElementById('cLength').textContent = selectedLength;
-  document.getElementById('cPrice').textContent = selectedPrice;
-}
+  for (let i=1;i<=5;i++){document.getElementById('step'+i).classList.remove('active');}
+  for (let i=1;i<=step;i++){document.getElementById('step'+i).classList.add('active');}
 }
 
-function selectStyle(style) {
+// Style & length
+function selectStyle(style){
   selectedStyle = style;
   document.getElementById('shortPrice').textContent = prices[style].Short;
   document.getElementById('mediumPrice').textContent = prices[style].Medium;
   document.getElementById('longPrice').textContent = prices[style].Long;
   showScreen('length',3);
 }
-
-function selectLength(length) {
+function selectLength(length){
   selectedLength = length;
   selectedPrice = prices[selectedStyle][length];
   showScreen('date',4);
 }
 
-  function sendWhatsApp() {
-  const phoneNumber = "27794380103"; // <-- replace with YOUR WhatsApp number
+// Save booking to Firebase
+function saveBookingToFirebase(){
+  const name = document.getElementById('clientName').value;
+  const phone = document.getElementById('clientPhone').value;
+  const email = document.getElementById('clientEmail').value;
+  const date = document.getElementById('bookingDate').value;
+  const time = document.getElementById('bookingTime').value;
 
-  const message =
-    "Hello Mumsy Braids Studio,%0A%0A" +
-    "I would like to book an appointment.%0A%0A" +
-    "Style: " + selectedStyle + "%0A" +
-    "Length: " + selectedLength + "%0A" +
-    "Total Price: R" + selectedPrice + "%0A%0A" +
-    "Thank you.";
+  if(!selectedStyle || !selectedLength || !name || !phone || !email || !date){
+    alert("Please fill all fields");
+    return;
+  }
 
-  window.open(
-    "https://wa.me/" + phoneNumber + "?text=" + message,
-    "_blank"
-  );
-}
-
-  function openAdmin() {
-  const booking = JSON.parse(localStorage.getItem("latestBooking"));
-
-  document.getElementById("adminStatus").textContent = booking.status;
-  document.getElementById("adminStyle").textContent = booking.style;
-  document.getElementById("adminLength").textContent = booking.length;
-  document.getElementById("adminPrice").textContent = booking.price;
-
-  showScreen('admin', 5);
-}
-
-function acceptBooking() {
-  updateBookingStatus("Accepted");
-}
-
-function declineBooking() {
-  updateBookingStatus("Declined");
-}
-
-function updateBookingStatus(status) {
-  const booking = JSON.parse(localStorage.getItem("latestBooking"));
-  booking.status = status;
-
-  localStorage.setItem("latestBooking", JSON.stringify(booking));
-
-  alert("Booking " + status);
-}
-
- // Your Firebase configuration
-  const firebaseConfig = {
-  apiKey: "AIzaSyDYzO6pW5fjL6OhKrtELohjpzev8znveys",
-  authDomain: "mumsy-braids-booking.firebaseapp.com",
-  projectId: "mumsy-braids-booking",
-  storageBucket: "mumsy-braids-booking.firebasestorage.app",
-  messagingSenderId: "494103742106",
-  appId: "1:494103742106:web:9b8f7cfd4430d045bec123",
-  measurementId: "G-090W6YHJ09"
-  };
-  
-  // Initialize Firebase
-  firebase.initializeApp(firebaseConfig);
-
-  // Initialize services
-  const db = firebase.firestore();
-  const auth = firebase.auth();
-
-    console.log("Firebase connected:", firebase.apps.length > 0);
-
-  function saveBookingToFirebase() {
   const booking = {
     style: selectedStyle,
     length: selectedLength,
     price: selectedPrice,
+    clientName: name,
+    clientPhone: phone,
+    clientEmail: email,
+    date,
+    time,
     status: "Pending",
     createdAt: firebase.firestore.FieldValue.serverTimestamp()
   };
 
   db.collection("bookings").add(booking)
-    .then(() => {
-      alert("Booking submitted! Status: Pending");
-      showScreen("confirmation", 5);
+    .then(docRef => {
+      // Show confirmation screen
+      document.getElementById('cStyle').textContent = selectedStyle;
+      document.getElementById('cLength').textContent = selectedLength;
+      document.getElementById('cPrice').textContent = selectedPrice;
+      document.getElementById('cDate').textContent = date;
+      document.getElementById('cTime').textContent = time;
+      document.getElementById('cStatus').textContent = "Pending";
+      showScreen('confirmation',5);
+      // Save doc id for admin
+      localStorage.setItem('latestBookingId', docRef.id);
     })
-    .catch((error) => {
-      alert("Error saving booking");
-      console.error(error);
+    .catch(err => {
+      console.error(err);
+      alert("Error saving booking. Check Firebase rules.");
     });
 }
-  
-</script>
 
+// Admin panel
+function openAdmin(){
+  const docId = localStorage.getItem('latestBookingId');
+  if(!docId) return alert("No booking found for admin");
+  db.collection("bookings").doc(docId).get().then(doc=>{
+    const data = doc.data();
+    document.getElementById('adminStatus').textContent = data.status;
+    document.getElementById('adminStyle').textContent = data.style;
+    document.getElementById('adminLength').textContent = data.length;
+    document.getElementById('adminPrice').textContent = data.price;
+    document.getElementById('adminDate').textContent = data.date;
+    document.getElementById('adminTime').textContent = data.time;
+    showScreen('admin',5);
+  });
+}
+
+function updateBookingStatus(status){
+  const docId = localStorage.getItem('latestBookingId');
+  if(!docId) return alert("No booking found");
+  db.collection("bookings").doc(docId).update({status})
+    .then(()=>{
+      alert("Booking " + status);
+      openAdmin();
+    })
+    .catch(err=>console.error(err));
+}
+</script>
 </body>
 </html>
