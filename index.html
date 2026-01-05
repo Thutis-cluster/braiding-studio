@@ -268,8 +268,31 @@ function updateBookingStatus(status) {
   alert("Booking " + status);
 }
 
+ // Your Firebase configuration
+  const firebaseConfig = {
+  apiKey: "AIzaSyDYzO6pW5fjL6OhKrtELohjpzev8znveys",
+  authDomain: "mumsy-braids-booking.firebaseapp.com",
+  projectId: "mumsy-braids-booking",
+  storageBucket: "mumsy-braids-booking.firebasestorage.app",
+  messagingSenderId: "494103742106",
+  appId: "1:494103742106:web:9b8f7cfd4430d045bec123",
+  measurementId: "G-090W6YHJ09"
+  };
+  
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
 
+  // Initialize services
+  const db = firebase.firestore();
+  const auth = firebase.auth();
+
+    console.log("Firebase connected:", firebase.apps.length > 0);
 </script>
+
+  <!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
 </body>
 </html>
