@@ -131,7 +131,7 @@ body {
   <input placeholder="Full Name">
   <input placeholder="Phone">
   <input type="email" placeholder="Email">
-  <button class="button" onclick="showScreen('confirmation',5)">Confirm</button>
+  <button class="button" onclick="saveBooking()">Confirm Booking</button>
   <button class="button" onclick="sendWhatsApp()">Send Booking on WhatsApp</button>
 </div>
 
@@ -142,13 +142,31 @@ body {
   <p>Length: <span id="cLength"></span></p>
   <p>Total: R<span id="cPrice"></span></p>
   <p>Hair Prep: Wash & dry hair before appointment</p> <p>Cancellation: 24h notice required</p>
+  <p style="color:#a67c52;">
+  ⏳ Your booking is pending approval.
+  You will be contacted once it is accepted.
+</p>
   <button class="button" onclick="showScreen('home',1)">Done</button>
 </div>
+
+  <div id="admin" class="screen">
+  <h2>Owner Admin Panel</h2>
+
+  <p>Status: <strong id="adminStatus"></strong></p>
+  <p>Style: <span id="adminStyle"></span></p>
+  <p>Length: <span id="adminLength"></span></p>
+  <p>Price: R<span id="adminPrice"></span></p>
+
+  <button class="button" onclick="acceptBooking()">✅ Accept</button>
+  <button class="button" onclick="declineBooking()">❌ Decline</button>
+</div>
+
 
 <script>
 let selectedStyle = "";
 let selectedLength = "";
 let selectedPrice = 0;
+let bookingStatus = "Pending";
 
 const prices = {
   "Box Braids": { Short: 180, Medium: 220, Long: 260 },
@@ -166,11 +184,14 @@ function showScreen(id, step) {
     document.getElementById('step'+i).classList.add('active');
   }
 
-  if (id === 'confirmation') {
-    document.getElementById('cStyle').textContent = selectedStyle;
-    document.getElementById('cLength').textContent = selectedLength;
-    document.getElementById('cPrice').textContent = selectedPrice;
-  }
+if (id === 'confirmation') {
+  const booking = JSON.parse(localStorage.getItem("latestBooking"));
+
+  document.getElementById('cStyle').textContent = booking.style;
+  document.getElementById('cLength').textContent = booking.length;
+  document.getElementById('cPrice').textContent = booking.price;
+  document.getElementById('bookingStatus').textContent = booking.status;
+}
 }
 
 function selectStyle(style) {
@@ -185,6 +206,21 @@ function selectLength(length) {
   selectedLength = length;
   selectedPrice = prices[selectedStyle][length];
   showScreen('date',4);
+}
+
+  function saveBooking() {
+  bookingStatus = "Pending";
+
+  const booking = {
+    style: selectedStyle,
+    length: selectedLength,
+    price: selectedPrice,
+    status: bookingStatus
+  };
+
+  localStorage.setItem("latestBooking", JSON.stringify(booking));
+
+  showScreen('confirmation', 5);
 }
 
   function sendWhatsApp() {
@@ -203,6 +239,35 @@ function selectLength(length) {
     "_blank"
   );
 }
+
+  function openAdmin() {
+  const booking = JSON.parse(localStorage.getItem("latestBooking"));
+
+  document.getElementById("adminStatus").textContent = booking.status;
+  document.getElementById("adminStyle").textContent = booking.style;
+  document.getElementById("adminLength").textContent = booking.length;
+  document.getElementById("adminPrice").textContent = booking.price;
+
+  showScreen('admin', 5);
+}
+
+function acceptBooking() {
+  updateBookingStatus("Accepted");
+}
+
+function declineBooking() {
+  updateBookingStatus("Declined");
+}
+
+function updateBookingStatus(status) {
+  const booking = JSON.parse(localStorage.getItem("latestBooking"));
+  booking.status = status;
+
+  localStorage.setItem("latestBooking", JSON.stringify(booking));
+
+  alert("Booking " + status);
+}
+
 
 </script>
 
