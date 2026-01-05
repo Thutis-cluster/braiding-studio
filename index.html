@@ -59,6 +59,52 @@ body {
   margin: 10px 0;
   border-radius: 8px;
 }
+
+.booking-card {
+  background: #fff0e6;
+  padding: 15px;
+  border-radius: 10px;
+  margin: 10px 0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.booking-card p {
+  margin: 5px 0;
+  font-size: 15px;
+}
+
+.booking-card button {
+  margin-right: 5px;
+}
+
+.button.accept {
+  background-color: #4CAF50; /* green */
+}
+
+.button.decline {
+  background-color: #E74C3C; /* red */
+}
+
+.button:hover {
+  opacity: 0.9;
+}
+
+.booking-card.pending {
+  border-left: 5px solid #F1C40F; /* yellow */
+  background-color: #fff9e6;
+}
+
+.booking-card.accepted {
+  border-left: 5px solid #27AE60; /* green */
+  background-color: #e6fff0;
+}
+
+.booking-card.declined {
+  border-left: 5px solid #E74C3C; /* red */
+  background-color: #ffe6e6;
+}
+
+
 </style>
 </head>
 
@@ -156,18 +202,16 @@ body {
   <button class="button" onclick="showScreen('home',1)">Done</button>
 </div>
 
-  <div id="admin" class="screen">
-  <h2>Owner Admin Panel</h2>
+<!-- Admin Panel -->
+<div id="admin" class="screen">
+  <h2>💼 Owner Admin Panel</h2>
 
-  <p>Status: <strong id="adminStatus"></strong></p>
-  <p>Style: <span id="adminStyle"></span></p>
-  <p>Length: <span id="adminLength"></span></p>
-  <p>Price: R<span id="adminPrice"></span></p>
+  <div id="bookingsList">
+    <!-- All bookings will be displayed here dynamically -->
+  </div>
 
-  <button class="button" onclick="acceptBooking()">✅ Accept</button>
-  <button class="button" onclick="declineBooking()">❌ Decline</button>
+  <button class="button" onclick="showScreen('home',1)">🏠 Back Home</button>
 </div>
-
 
 <script>
 let selectedStyle = "";
@@ -229,15 +273,54 @@ function selectLength(length) {
   );
 }
 
-  function openAdmin() {
-  const booking = JSON.parse(localStorage.getItem("latestBooking"));
+function openAdmin() {
+  const list = document.getElementById("bookingsList");
+  list.innerHTML = "<p>Loading bookings...</p>";
 
-  document.getElementById("adminStatus").textContent = booking.status;
-  document.getElementById("adminStyle").textContent = booking.style;
-  document.getElementById("adminLength").textContent = booking.length;
-  document.getElementById("adminPrice").textContent = booking.price;
+  db.collection("bookings").orderBy("createdAt", "desc").get()
+    .then((snapshot) => {
+      if (snapshot.empty) {
+        list.innerHTML = "<p>No bookings yet.</p>";
+        return;
+      }
 
-  showScreen('admin', 5);
+      list.innerHTML = ""; // clear loading message
+      snapshot.forEach((doc) => {
+        const booking = doc.data();
+        const id = doc.id;
+
+        // Determine class based on status
+        let statusClass = "";
+        if (booking.status === "Pending") statusClass = "pending";
+        if (booking.status === "Accepted") statusClass = "accepted";
+        if (booking.status === "Declined") statusClass = "declined";
+
+        const card = document.createElement("div");
+        card.classList.add("booking-card", statusClass);
+
+        card.innerHTML = `
+          <p><strong>Status:</strong> ${booking.status}</p>
+          <p><strong>Style:</strong> ${booking.style}</p>
+          <p><strong>Length:</strong> ${booking.length}</p>
+          <p><strong>Price:</strong> R${booking.price}</p>
+          <p><strong>Date:</strong> ${booking.date || "-"}</p>
+          <p><strong>Time:</strong> ${booking.time || "-"}</p>
+          <p><strong>Name:</strong> ${booking.clientName || "-"}</p>
+          <p><strong>Phone:</strong> ${booking.clientPhone || "-"}</p>
+          <p><strong>Email:</strong> ${booking.clientEmail || "-"}</p>
+          <button class="button accept" onclick="updateBookingStatus('${id}', 'Accepted')">✅ Accept</button>
+          <button class="button decline" onclick="updateBookingStatus('${id}', 'Declined')">❌ Decline</button>
+        `;
+
+        list.appendChild(card);
+      });
+    })
+    .catch((err) => {
+      console.error(err);
+      list.innerHTML = "<p>Error loading bookings.</p>";
+    });
+
+  showScreen("admin", 5);
 }
 
 function acceptBooking() {
@@ -248,14 +331,20 @@ function declineBooking() {
   updateBookingStatus("Declined");
 }
 
-function updateBookingStatus(status) {
-  const booking = JSON.parse(localStorage.getItem("latestBooking"));
-  booking.status = status;
-
-  localStorage.setItem("latestBooking", JSON.stringify(booking));
-
-  alert("Booking " + status);
+ function updateBookingStatus(docId, status) {
+  db.collection("bookings").doc(docId).update({
+    status: status
+  })
+  .then(() => {
+    alert(`Booking ${status}`);
+    openAdmin(); // refresh list automatically
+  })
+  .catch((err) => {
+    console.error(err);
+    alert("Error updating booking status.");
+  });
 }
+
 
  // Your Firebase configuration
   const firebaseConfig = {
@@ -278,13 +367,18 @@ function updateBookingStatus(status) {
     console.log("Firebase connected:", firebase.apps.length > 0);
 
   function saveBookingToFirebase() {
-  const booking = {
-    style: selectedStyle,
-    length: selectedLength,
-    price: selectedPrice,
-    status: "Pending",
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  };
+const booking = {
+  style: selectedStyle,
+  length: selectedLength,
+  price: selectedPrice,
+  status: "Pending",
+  clientName: document.querySelector("#client input[placeholder='Full Name']").value,
+  clientPhone: document.querySelector("#client input[placeholder='Phone']").value,
+  clientEmail: document.querySelector("#client input[type='email']").value,
+  date: document.querySelector("#date input[type='date']").value,
+  time: document.querySelector("#date select").value,
+  createdAt: firebase.firestore.FieldValue.serverTimestamp()
+};
 
   db.collection("bookings").add(booking)
     .then(() => {
