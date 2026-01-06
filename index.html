@@ -298,10 +298,21 @@ function confirmBooking(method) {
 }
 
 // Send WhatsApp to studio
-function sendWhatsAppToStudio(booking){
-  const phone="27794380103"; // Studio
-  const message=`New booking received!\nName: ${booking.clientName}\nPhone: ${booking.clientPhone}\nStyle: ${booking.style}\nLength: ${booking.length}\nPrice: R${booking.price}\nDate: ${booking.date}\nTime: ${booking.time}`;
-  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`,"_blank");
+  function sendWhatsApp() {
+  const phoneNumber = "27794380103"; // <-- replace with YOUR WhatsApp number
+
+  const message =
+    "Hello Mumsy Braids Studio,%0A%0A" +
+    "I would like to book an appointment.%0A%0A" +
+    "Style: " + selectedStyle + "%0A" +
+    "Length: " + selectedLength + "%0A" +
+    "Total Price: R" + selectedPrice + "%0A%0A" +
+    "Thank you.";
+
+  window.open(
+    "https://wa.me/" + phoneNumber + "?text=" + message,
+    "_blank"
+  );
 }
 
 // Send WhatsApp to client
