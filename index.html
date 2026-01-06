@@ -296,6 +296,17 @@ let isSubmitting = false;
 const WORK_START = 9;  // 09:00
 const WORK_END = 17;  // 17:00
 
+  // ----------------- SCREEN NAVIGATION -----------------
+function showScreen(id, step) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+
+  for (let i = 1; i <= 5; i++) document.getElementById('step'+i).classList.remove('active');
+  for (let i = 1; i <= step; i++) document.getElementById('step'+i).classList.add('active');
+
+  if(id === "confirmation") displayConfirmation();
+}
+
 function getHourFromTime(timeStr) {
   // "13:00" → 13
   return parseInt(timeStr.split(":")[0], 10);
@@ -356,17 +367,6 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 console.log("Firebase connected:", firebase.apps.length > 0);
-
-// ----------------- SCREEN NAVIGATION -----------------
-function showScreen(id, step) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-
-  for (let i = 1; i <= 5; i++) document.getElementById('step'+i).classList.remove('active');
-  for (let i = 1; i <= step; i++) document.getElementById('step'+i).classList.add('active');
-
-  if(id === "confirmation") displayConfirmation();
-}
 
 // ----------------- SELECT STYLE & LENGTH -----------------
 function selectStyle(style) {
