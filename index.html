@@ -196,42 +196,7 @@ body {
 
   <button class="button" onclick="showScreen('home',1)">Back</button>
 </div>
-<div id="styles" class="screen">
-  <h2>Select Style</h2>
-
-  <div class="style-card">
-    <img src="images/IMG-20251228-WA0018.jpg" alt="Box Braids">
-    <p><strong>Box Braids</strong></p>
-    <button class="button" onclick="selectStyle('Box Braids')">Select</button>
-  </div>
-
-  <div class="style-card">
-    <img src="images/IMG-20251228-WA0010.jpg" alt="Knotless Braids">
-    <p><strong>Knotless Braids</strong></p>
-    <button class="button" onclick="selectStyle('Knotless Braids')">Select</button>
-  </div>
-
-  <div class="style-card">
-    <img src="images/ad33c7c54379f42c.jpeg" alt="Straight back">
-    <p><strong>Straight back</strong></p>
-    <button class="button" onclick="selectStyle('Straight back')">Select</button>
-  </div>
-
-  <div class="style-card">
-    <img src="images/cornflowers.webp" alt="Cornflower">
-    <p><strong>Cornflower</strong></p>
-    <button class="button" onclick="selectStyle('Cornflower')">Select</button>
-  </div>
-
-  <div class="style-card">
-    <img src="images/with beads.webp" alt="Cornflower with Beads">
-    <p><strong>Cornflower with Beads</strong></p>
-    <button class="button" onclick="selectStyle('Cornflower with Beads')">Select</button>
-  </div>
-
-  <button class="button" onclick="showScreen('home',1)">Back</button>
-</div>
-
+  
 <div id="length" class="screen">
   <h2>Select Length</h2>
 
@@ -258,7 +223,6 @@ body {
 
   <button class="button" onclick="showScreen('styles',2)">Back</button>
 </div>
-
 
 <div id="date" class="screen">
   <h2>Date & Time</h2>
@@ -579,7 +543,6 @@ function getMinutesFromEstimate(estimate) {
 
 const TIME_PER_SLOT_MINUTES = 90; // 1.5 hours
 
-
   function updateAvailableTimes() {
   const select = document.getElementById("clientTime");
   const requiredMinutes = getMinutesFromEstimate(selectedTimeEstimate);
@@ -622,7 +585,7 @@ function sendWhatsAppBooking(booking, method) {
 
   // Small delay to avoid browser blocking multiple windows
   setTimeout(() => {
-    window.open(`https://wa.me/${clientPhone}?text=${encodeURIComponent(clientMessage)}`, "_blank`);
+window.open(`https://wa.me/${clientPhone}?text=${encodeURIComponent(clientMessage)}`, "_blank");
   }, 500);
 }
 
