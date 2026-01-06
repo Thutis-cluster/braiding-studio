@@ -316,10 +316,15 @@ function confirmBooking(method) {
 }
 
 // Send WhatsApp to client
-function sendWhatsAppToClient(booking,messageIntro=""){
-  const phone=booking.clientPhone.replace(/\D/g,'');
-  const message=`${messageIntro}\nBooking Details:\nStyle: ${booking.style}\nLength: ${booking.length}\nPrice: R${booking.price}\nDate: ${booking.date}\nTime: ${booking.time}\nStatus: ${booking.status}`;
-  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`,"_blank");
+function sendWhatsAppToClient(booking, messageIntro = "") {
+  let phone = booking.clientPhone.replace(/\D/g, ''); // remove all non-numbers
+
+  // If phone starts with 0, replace with country code (example for South Africa)
+  if (phone.startsWith("0")) phone = "27" + phone.slice(1);
+
+  const message = `${messageIntro}\nBooking Details:\nStyle: ${booking.style}\nLength: ${booking.length}\nPrice: R${booking.price}\nDate: ${booking.date}\nTime: ${booking.time}\nStatus: ${booking.status}`;
+
+  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, "_blank");
 }
 
 // Send SMS to client
