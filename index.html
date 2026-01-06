@@ -493,6 +493,8 @@ function validateClientForm() {
     btn.disabled = !(nameValid && phoneValid);
   });
 }
+
+  
   
 function confirmBooking(method) {
   if (isSubmitting) return; // prevent double submissions
@@ -567,8 +569,6 @@ function confirmBooking(method) {
     });
 }
 
-
-
 function getMinutesFromEstimate(estimate) {
   // Example: "3 – 4 hours" → take MAX value
   const numbers = estimate.match(/\d+(\.\d+)?/g);
@@ -607,24 +607,43 @@ const TIME_PER_SLOT_MINUTES = 90; // 1.5 hours
   );
 }
 
-// Send WhatsApp to client
+// Send WhatsApp to client with full booking details
 function sendWhatsAppToClient(booking, messageIntro = "") {
-  let phone = booking.clientPhone.replace(/\D/g, ''); // remove all non-numbers
+  let phone = booking.clientPhone.replace(/\D/g, ''); // remove non-numbers
 
   // If phone starts with 0, replace with country code (example for South Africa)
   if (phone.startsWith("0")) phone = "27" + phone.slice(1);
 
-  const message = `${messageIntro}\nBooking Details:\nStyle: ${booking.style}\nLength: ${booking.length}\nPrice: R${booking.price}\nDate: ${booking.date}\nTime: ${booking.time}\nStatus: ${booking.status}`;
+  // Compose message
+  const message = `${messageIntro}\n\nHi ${booking.clientName}, here are your booking details:\n\n` +
+                  `💇 Style: ${booking.style}\n` +
+                  `📏 Length: ${booking.length}\n` +
+                  `💰 Price: R${booking.price}\n` +
+                  `⏱ Estimated Time: ${booking.timeEstimate}\n` +
+                  `📅 Date: ${booking.date}\n` +
+                  `🕒 Time: ${booking.time}\n` +
+                  `✅ Status: ${booking.status}\n\n` +
+                  `🔹 Hair Prep: Wash & dry hair before appointment\n` +
+                  `🔹 Cancellation: 24h notice required`;
 
+  // Open WhatsApp chat in a new tab
   window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, "_blank");
 }
 
 // Send SMS to client
-function sendSmsToClient(booking,messageIntro=""){
-  const phone=booking.clientPhone.replace(/\D/g,'');
-  const message=`${messageIntro}\nBooking Details:\nStyle: ${booking.style}\nLength: ${booking.length}\nPrice: R${booking.price}\nDate: ${booking.date}\nTime: ${booking.time}\nStatus: ${booking.status}`;
-  window.open(`sms:${phone}?body=${encodeURIComponent(message)}`,"_blank");
+function sendSmsToClient(booking, messageIntro = "") {
+  const phone = booking.clientPhone.replace(/\D/g, '');
+  const message = `${messageIntro}\nHello ${booking.clientName},\nYour booking details:\n` +
+                  `Style: ${booking.style}\n` +
+                  `Length: ${booking.length}\n` +
+                  `Price: R${booking.price}\n` +
+                  `Date: ${booking.date}\n` +
+                  `Time: ${booking.time}\n` +
+                  `Status: ${booking.status}`;
+
+  window.open(`sms:${phone}?body=${encodeURIComponent(message)}`, "_blank");
 }
+
 
 // ----------------- STATUS UPDATE -----------------
 function updateBookingStatus(id, status) {
