@@ -488,16 +488,6 @@ function confirmBooking(method) {
     btn.textContent = "⏳ Submitting...";
   });
 
-  // required validation
-  const name = document.getElementById("clientName").value.trim();
-  const phone = document.getElementById("clientPhone").value.trim();
-
-  if (!name || !phone) {
-    isSubmitting = false;
-    alert("Please fill in all required fields");
-    return;
-  }
-
   // working hours check
   const selectedHour = getHourFromTime(
     document.getElementById("clientTime").value
