@@ -277,29 +277,45 @@ function confirmBooking(method) {
     method: method // store method for status updates
   };
 
-  db.collection("bookings").add(booking)
-    .then(docRef => {
-      console.log("Booking saved:", docRef.id);
-      booking.id = docRef.id;
-      localStorage.setItem("latestBooking", JSON.stringify(booking));
-      showScreen("confirmation",5);
-      
-      if(method === "whatsapp") sendWhatsAppToClient(booking, "Thank you for booking!");
-      else if(method === "sms") sendSmsToClient(booking, "Thank you for booking!");
-    })
-    .catch(err => alert("Error saving booking: " + err));
+  db.collection("bookings").add(booking).then(docRef=>{
+    booking.id = docRef.id;
+    localStorage.setItem("latestBooking",JSON.stringify(booking));
+    showScreen("confirmation");
+    document.getElementById("cStyle").textContent = booking.style;
+    document.getElementById("cDate").textContent = booking.date;
+    document.getElementById("cTime").textContent = booking.time;
+    document.getElementById("cName").textContent = booking.clientName;
+    document.getElementById("cPhone").textContent = booking.clientPhone;
+    document.getElementById("cStatus").textContent = booking.status;
+
+    // Send WhatsApp or SMS to client automatically
+    if(method==="whatsapp") sendWhatsAppToClient(booking,"✅ Booking Confirmed!");
+    else if(method==="sms") sendSmsToClient(booking,"✅ Booking Confirmed!");
+
+    // Always send WhatsApp to studio automatically
+    sendWhatsAppToStudio(booking);
+  }).catch(err=>alert("Error saving booking: "+err));
 }
 
-function sendWhatsAppToClient(booking, messageIntro="") {
-  const phone = booking.clientPhone.replace(/\D/g,''); 
-  const message = `${messageIntro}%0A%0ABooking Details:%0AStyle: ${booking.style}%0ALength: ${booking.length}%0APrice: R${booking.price}%0ADate: ${booking.date}%0ATime: ${booking.time}%0AStatus: ${booking.status}`;
-  window.open(`https://wa.me/${phone}?text=${message}`, "_blank");
+// Send WhatsApp to studio
+function sendWhatsAppToStudio(booking){
+  const phone="27794380103"; // Studio
+  const message=`New booking received!\nName: ${booking.clientName}\nPhone: ${booking.clientPhone}\nStyle: ${booking.style}\nLength: ${booking.length}\nPrice: R${booking.price}\nDate: ${booking.date}\nTime: ${booking.time}`;
+  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`,"_blank");
 }
 
-function sendSmsToClient(booking, messageIntro="") {
-  const phone = booking.clientPhone.replace(/\D/g,''); 
-  const message = `${messageIntro}\nBooking Details:\nStyle: ${booking.style}\nLength: ${booking.length}\nPrice: R${booking.price}\nDate: ${booking.date}\nTime: ${booking.time}\nStatus: ${booking.status}`;
-  window.open(`sms:${phone}?body=${encodeURIComponent(message)}`, "_blank");
+// Send WhatsApp to client
+function sendWhatsAppToClient(booking,messageIntro=""){
+  const phone=booking.clientPhone.replace(/\D/g,'');
+  const message=`${messageIntro}\nBooking Details:\nStyle: ${booking.style}\nLength: ${booking.length}\nPrice: R${booking.price}\nDate: ${booking.date}\nTime: ${booking.time}\nStatus: ${booking.status}`;
+  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`,"_blank");
+}
+
+// Send SMS to client
+function sendSmsToClient(booking,messageIntro=""){
+  const phone=booking.clientPhone.replace(/\D/g,'');
+  const message=`${messageIntro}\nBooking Details:\nStyle: ${booking.style}\nLength: ${booking.length}\nPrice: R${booking.price}\nDate: ${booking.date}\nTime: ${booking.time}\nStatus: ${booking.status}`;
+  window.open(`sms:${phone}?body=${encodeURIComponent(message)}`,"_blank");
 }
 
 // ----------------- STATUS UPDATE -----------------
@@ -325,54 +341,47 @@ function updateBookingStatus(id, status) {
 }
 
 // ----------------- ADMIN PANEL -----------------
-function openAdmin() {
-  const list = document.getElementById("bookingsList");
-  db.collection("bookings").orderBy("createdAt","desc")
-    .onSnapshot(snapshot => {
-      if(snapshot.empty) {
-        list.innerHTML = "<p>No bookings yet.</p>";
-        return;
-      }
-      list.innerHTML = "";
-      snapshot.forEach(doc => {
-        const b = doc.data();
-        const card = document.createElement("div");
-        card.classList.add("booking-card");
-        card.classList.add(b.status.toLowerCase());
-        card.innerHTML = `
-          <p><strong>Status:</strong> <span id="status-${doc.id}">${b.status}</span></p>
-          <p><strong>Style:</strong> ${b.style}</p>
-          <p><strong>Length:</strong> ${b.length}</p>
-          <p><strong>Price:</strong> R${b.price}</p>
-          <p><strong>Date:</strong> ${b.date || "-"}</p>
-          <p><strong>Time:</strong> ${b.time || "-"}</p>
-          <p><strong>Name:</strong> ${b.clientName || "-"}</p>
-          <p><strong>Phone:</strong> ${b.clientPhone || "-"}</p>
-          <p><strong>Email:</strong> ${b.clientEmail || "-"}</p>
-          <button class="button accept" onclick="updateBookingStatus('${doc.id}','Accepted')">✅ Accept</button>
-          <button class="button decline" onclick="updateBookingStatus('${doc.id}','Declined')">❌ Decline</button>
-        `;
-        list.appendChild(card);
-      });
+function openAdmin(){
+  const list=document.getElementById("bookingsList");
+  db.collection("bookings").orderBy("createdAt","desc").onSnapshot(snapshot=>{
+    list.innerHTML="";
+    snapshot.forEach(doc=>{
+      const booking=doc.data();
+      const id=doc.id;
+      let statusClass = booking.status==="Pending"?"pending":booking.status==="Accepted"?"accepted":"declined";
+      const card=document.createElement("div");
+      card.classList.add("booking-card",statusClass);
+      card.innerHTML=`
+        <p><strong>Status:</strong> <span id="status-${id}">${booking.status}</span></p>
+        <p><strong>Name:</strong> ${booking.clientName}</p>
+        <p><strong>Phone:</strong> ${booking.clientPhone}</p>
+        <p><strong>Style:</strong> ${booking.style}</p>
+        <p><strong>Length:</strong> ${booking.length}</p>
+        <p><strong>Price:</strong> R${booking.price}</p>
+        <p><strong>Date:</strong> ${booking.date}</p>
+        <p><strong>Time:</strong> ${booking.time}</p>
+        <button class="button accept" onclick="updateBookingStatus('${id}','Accepted')">✅ Accept</button>
+        <button class="button decline" onclick="updateBookingStatus('${id}','Declined')">❌ Decline</button>
+      `;
+      list.appendChild(card);
     });
-  showScreen("admin",5);
+  });
 }
 
-function updateBookingStatus(id, status) {
-  const bookingRef = db.collection("bookings").doc(id);
-  bookingRef.update({ status: status })
-    .then(() => {
-      console.log("Booking updated:", id, status);
-      const latestBooking = JSON.parse(localStorage.getItem("latestBooking"));
-      if(latestBooking?.id === id) {
-        latestBooking.status = status;
-        localStorage.setItem("latestBooking", JSON.stringify(latestBooking));
-        if(document.getElementById("confirmation").classList.contains("active"))
-          document.getElementById("cStatus").textContent = status;
-        sendWhatsAppToClient(latestBooking, "Your booking status has been updated!");
-      }
-    })
-    .catch(err => console.error(err));
+function updateBookingStatus(id,status){
+  const bookingRef=db.collection("bookings").doc(id);
+  bookingRef.update({status:status}).then(()=>{
+    const latestBooking=JSON.parse(localStorage.getItem("latestBooking"));
+    if(latestBooking?.id===id){
+      latestBooking.status=status;
+      localStorage.setItem("latestBooking",JSON.stringify(latestBooking));
+      if(document.getElementById("confirmation").classList.contains("active"))
+        document.getElementById("cStatus").textContent=status;
+
+      if(latestBooking.method==="whatsapp") sendWhatsAppToClient(latestBooking,"📢 Booking Status Updated!");
+      else if(latestBooking.method==="sms") sendSmsToClient(latestBooking,"📢 Booking Status Updated!");
+    }
+  }).catch(err=>console.error(err));
 }
 </script>
 </body>
