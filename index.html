@@ -89,6 +89,50 @@ body {
   border-radius: 8px;
 }
 
+  .error {
+  color: #E74C3C;
+  font-size: 13px;
+  margin-bottom: 10px;
+  display: block;
+}
+
+  button:disabled {
+  background-color: #e0d5cc;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+  input:required {
+  border: 1px solid #f5b7a3;
+}
+
+  .input-group {
+  position: relative;
+  margin-bottom: 5px;
+}
+
+.input-group input {
+  width: 100%;
+  padding-right: 35px;
+}
+
+.checkmark {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #27AE60;
+  font-size: 18px;
+  display: none;
+}
+
+  #dailySummary .style-card {
+  background: #e6fff0;
+  border-left: 5px solid #27AE60;
+}
+
+
+
 .booking-card.pending { border-left: 5px solid #F1C40F; background-color: #fff9e6; }
 .booking-card.accepted { border-left: 5px solid #27AE60; background-color: #e6fff0; }
 .booking-card.declined { border-left: 5px solid #E74C3C; background-color: #ffe6e6; }
@@ -189,19 +233,37 @@ body {
 
 <div id="client" class="screen">
   <h2>Your Details</h2>
-  <input id="clientName" placeholder="Full Name">
-  <input id="clientPhone" placeholder="Phone">
-  <input type="email" id="clientEmail" placeholder="Email">
+<div class="input-group">
+  <input id="clientName" placeholder="Full Name *" required oninput="validateClientForm()">
+  <span class="checkmark" id="nameCheck">✔</span>
+</div>
+<span class="error" id="nameError"></span>
+
+<div class="input-group">
+  <input id="clientPhone" placeholder="Phone *" required oninput="validateClientForm()">
+  <span class="checkmark" id="phoneCheck">✔</span>
+</div>
+<span class="error" id="phoneError"></span>
+
+<input type="email" id="clientEmail" placeholder="Email (Optional)">
+
 
   <button class="button" onclick="showScreen('home',1)">Back</button>
-  <button class="button" onclick="confirmBooking('sms')">✅ Confirm Booking (SMS)</button>
-  <button class="button" onclick="confirmBooking('whatsapp')">📱 Send Booking on WhatsApp</button>
+<button class="button submit-btn" onclick="confirmBooking('sms')" disabled>
+  ✅ Confirm Booking (SMS)
+</button>
+
+<button class="button submit-btn" onclick="confirmBooking('whatsapp')" disabled>
+  📱 Send Booking on WhatsApp
+</button>
+
 </div>
 
 <div id="confirmation" class="screen">
   <h2>✅ Booking Confirmed</h2>
   <p>Style: <span id="cStyle"></span></p>
   <p>Length: <span id="cLength"></span></p>
+  <p>Estimated Time: <span id="cTimeEstimate"></span></p>
   <p>Total: R<span id="cPrice"></span></p>
   <p>Date: <span id="cDate"></span></p>
   <p>Time: <span id="cTime"></span></p>
@@ -216,8 +278,10 @@ body {
 </div>
 
 <div id="admin" class="screen">
+  
   <h2>💼 Owner Admin Panel</h2>
   <div id="bookingsList">
+    <div id="dailySummary"></div>
     <p>Loading bookings...</p>
   </div>
 </div>
@@ -227,6 +291,23 @@ body {
 let selectedStyle = "";
 let selectedLength = "";
 let selectedPrice = 0;
+let selectedTimeEstimate = "";
+let isSubmitting = false;
+const WORK_START = 9;  // 09:00
+const WORK_END = 17;  // 17:00
+
+function getHourFromTime(timeStr) {
+  // "13:00" → 13
+  return parseInt(timeStr.split(":")[0], 10);
+}
+
+  function estimateToHours(estimate) {
+  // "3 – 4 hours" → take MAX (4)
+  const numbers = estimate.match(/\d+(\.\d+)?/g);
+  return numbers ? Math.max(...numbers.map(Number)) : 0;
+}
+
+
 
 const prices = {
   "Box Braids": { Short: 180, Medium: 220, Long: 260 },
@@ -307,8 +388,20 @@ function selectStyle(style) {
 function selectLength(length) {
   selectedLength = length;
   selectedPrice = prices[selectedStyle][length];
-  showScreen('date',4);
+  selectedTimeEstimate = times[selectedStyle][length];
+  showScreen('date', 4);
 }
+
+  const selectedHour = getHourFromTime(
+  document.getElementById("clientTime").value
+);
+
+if (selectedHour < WORK_START || selectedHour >= WORK_END) {
+  alert("⛔ Bookings are only available between 09:00 and 17:00.");
+  isSubmitting = false;
+  return;
+}
+
 
 // ----------------- SAVE BOOKING -----------------
 function saveBookingToFirebase() {
@@ -343,6 +436,7 @@ function displayConfirmation() {
   document.getElementById("cStyle").textContent = booking.style;
   document.getElementById("cLength").textContent = booking.length;
   document.getElementById("cPrice").textContent = booking.price;
+  document.getElementById("cTimeEstimate").textContent = booking.timeEstimate;
   document.getElementById("cDate").textContent = booking.date;
   document.getElementById("cTime").textContent = booking.time;
   document.getElementById("cName").textContent = booking.clientName;
@@ -351,10 +445,59 @@ function displayConfirmation() {
   document.getElementById("cStatus").textContent = booking.status;
 }
 
+function validateClientForm() {
+  const nameInput = document.getElementById("clientName");
+  const phoneInput = document.getElementById("clientPhone");
+
+  const nameCheck = document.getElementById("nameCheck");
+  const phoneCheck = document.getElementById("phoneCheck");
+
+  const nameValid = nameInput.value.trim() !== "";
+  const phoneValid = phoneInput.value.trim() !== "";
+
+  nameCheck.style.display = nameValid ? "block" : "none";
+  phoneCheck.style.display = phoneValid ? "block" : "none";
+
+  document.querySelectorAll(".submit-btn").forEach(btn => {
+    btn.disabled = !(nameValid && phoneValid);
+  });
+}
+
+  if (isSubmitting) return;
+isSubmitting = true;
+
+// Disable buttons immediately
+document.querySelectorAll(".submit-btn").forEach(btn => {
+  btn.disabled = true;
+  btn.textContent = "⏳ Submitting...";
+});
+
+// -------- REQUIRED FIELD VALIDATION --------
+const name = document.getElementById("clientName").value.trim();
+const phone = document.getElementById("clientPhone").value.trim();
+
+document.getElementById("nameError").textContent = "";
+document.getElementById("phoneError").textContent = "";
+
+let hasError = false;
+
+if (!name) {
+  document.getElementById("nameError").textContent = "Full name is required";
+  hasError = true;
+}
+
+if (!phone) {
+  document.getElementById("phoneError").textContent = "Phone number is required";
+  hasError = true;
+}
+
+if (hasError) return;
+  
 function confirmBooking(method) {
   const booking = {
     style: selectedStyle,
     length: selectedLength,
+    timeEstimate: selectedTimeEstimate,
     price: selectedPrice,
     clientName: document.getElementById("clientName").value,
     clientPhone: document.getElementById("clientPhone").value,
@@ -383,9 +526,49 @@ function confirmBooking(method) {
 
     // Always send WhatsApp to studio automatically
     sendWhatsAppToStudio(booking);
-  }).catch(err=>alert("Error saving booking: "+err));
+  }).catch(err=>alert(isSubmitting = false;
+document.querySelectorAll(".submit-btn").forEach(btn => {
+  btn.textContent = btn.textContent.includes("SMS")
+    ? "✅ Confirm Booking (SMS)"
+    : "📱 Send Booking on WhatsApp";
+});
+"Error saving booking: "+err));
 }
 
+function getMinutesFromEstimate(estimate) {
+  // Example: "3 – 4 hours" → take MAX value
+  const numbers = estimate.match(/\d+(\.\d+)?/g);
+  if (!numbers) return 0;
+  const maxHours = Math.max(...numbers.map(Number));
+  return maxHours * 60;
+}
+
+const TIME_PER_SLOT_MINUTES = 90; // 1.5 hours
+
+  const requiredMinutes = getMinutesFromEstimate(selectedTimeEstimate);
+
+if (requiredMinutes > TIME_PER_SLOT_MINUTES) {
+  alert(
+    "⛔ This style needs about " +
+    selectedTimeEstimate +
+    ". Please choose an earlier or longer time slot."
+  );
+  return;
+}
+
+  function updateAvailableTimes() {
+  const select = document.getElementById("clientTime");
+  const requiredMinutes = getMinutesFromEstimate(selectedTimeEstimate);
+
+  Array.from(select.options).forEach(option => {
+    option.disabled = requiredMinutes > TIME_PER_SLOT_MINUTES;
+  });
+}
+
+ showScreen('date', 4);
+updateAvailableTimes();
+
+  
 // Send WhatsApp to studio
   function sendWhatsApp() {
   const phoneNumber = "27794380103"; // <-- replace with YOUR WhatsApp number
@@ -446,32 +629,60 @@ function updateBookingStatus(id, status) {
 }
 
 // ----------------- ADMIN PANEL -----------------
-function openAdmin(){
-  const list=document.getElementById("bookingsList");
-  db.collection("bookings").orderBy("createdAt","desc").onSnapshot(snapshot=>{
-    list.innerHTML="";
-    snapshot.forEach(doc=>{
-      const booking=doc.data();
-      const id=doc.id;
-      let statusClass = booking.status==="Pending"?"pending":booking.status==="Accepted"?"accepted":"declined";
-      const card=document.createElement("div");
-      card.classList.add("booking-card",statusClass);
-      card.innerHTML=`
-        <p><strong>Status:</strong> <span id="status-${id}">${booking.status}</span></p>
-        <p><strong>Name:</strong> ${booking.clientName}</p>
-        <p><strong>Phone:</strong> ${booking.clientPhone}</p>
-        <p><strong>Style:</strong> ${booking.style}</p>
-        <p><strong>Length:</strong> ${booking.length}</p>
-        <p><strong>Price:</strong> R${booking.price}</p>
-        <p><strong>Date:</strong> ${booking.date}</p>
-        <p><strong>Time:</strong> ${booking.time}</p>
-        <button class="button accept" onclick="updateBookingStatus('${id}','Accepted')">✅ Accept</button>
-        <button class="button decline" onclick="updateBookingStatus('${id}','Declined')">❌ Decline</button>
-      `;
-      list.appendChild(card);
+function openAdmin() {
+  const list = document.getElementById("bookingsList");
+  const summary = document.getElementById("dailySummary");
+
+  db.collection("bookings")
+    .orderBy("createdAt", "desc")
+    .onSnapshot(snapshot => {
+
+      list.innerHTML = "";
+      summary.innerHTML = "";
+
+      const dailyTotals = {};
+
+      snapshot.forEach(doc => {
+        const booking = doc.data();
+        const id = doc.id;
+
+        // --- calculate hours ---
+        const hours = estimateToHours(booking.timeEstimate || "0");
+        dailyTotals[booking.date] =
+          (dailyTotals[booking.date] || 0) + hours;
+
+        // --- booking card ---
+        let statusClass =
+          booking.status === "Pending" ? "pending" :
+          booking.status === "Accepted" ? "accepted" : "declined";
+
+        const card = document.createElement("div");
+        card.className = `booking-card ${statusClass}`;
+        card.innerHTML = `
+          <p><strong>${booking.clientName}</strong></p>
+          <p>${booking.style} – ${booking.length}</p>
+          <p>⏱ ${booking.timeEstimate}</p>
+          <p>${booking.date} @ ${booking.time}</p>
+          <p>Status: ${booking.status}</p>
+          <button class="button accept" onclick="updateBookingStatus('${id}','Accepted')">Accept</button>
+          <button class="button decline" onclick="updateBookingStatus('${id}','Declined')">Decline</button>
+        `;
+        list.appendChild(card);
+      });
+
+      // --- daily summary ---
+      for (const date in dailyTotals) {
+        const div = document.createElement("div");
+        div.className = "style-card";
+        div.innerHTML = `
+          <strong>${date}</strong><br>
+          Total Estimated Work: ⏱ ${dailyTotals[date]} hours
+        `;
+        summary.appendChild(div);
+      }
     });
-  });
 }
+
 
 function updateBookingStatus(id,status){
   const bookingRef=db.collection("bookings").doc(id);
