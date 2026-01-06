@@ -493,12 +493,6 @@ function validateClientForm() {
     btn.disabled = !(nameValid && phoneValid);
   });
 }
-
-// Disable buttons immediately
-document.querySelectorAll(".submit-btn").forEach(btn => {
-  btn.disabled = true;
-  btn.textContent = "⏳ Submitting...";
-});
   
 function confirmBooking(method) {
   if (isSubmitting) return;
