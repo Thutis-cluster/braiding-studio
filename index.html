@@ -494,46 +494,74 @@ if (!phone) {
 if (hasError) return;
   
 function confirmBooking(method) {
+  if (isSubmitting) return;
+  isSubmitting = true;
+
+  // disable buttons
+  document.querySelectorAll(".submit-btn").forEach(btn => {
+    btn.disabled = true;
+    btn.textContent = "⏳ Submitting...";
+  });
+
+  // required validation
+  const name = document.getElementById("clientName").value.trim();
+  const phone = document.getElementById("clientPhone").value.trim();
+
+  if (!name || !phone) {
+    isSubmitting = false;
+    alert("Please fill in all required fields");
+    return;
+  }
+
+  // working hours check
+  const selectedHour = getHourFromTime(
+    document.getElementById("clientTime").value
+  );
+
+  if (selectedHour < WORK_START || selectedHour >= WORK_END) {
+    alert("⛔ Bookings are only available between 09:00 and 17:00.");
+    resetSubmitButtons();
+    return;
+  }
+
+  // time slot length check
+  const requiredMinutes = getMinutesFromEstimate(selectedTimeEstimate);
+  if (requiredMinutes > TIME_PER_SLOT_MINUTES) {
+    alert("⛔ This style needs about " + selectedTimeEstimate);
+    resetSubmitButtons();
+    return;
+  }
+
   const booking = {
     style: selectedStyle,
     length: selectedLength,
     timeEstimate: selectedTimeEstimate,
     price: selectedPrice,
-    clientName: document.getElementById("clientName").value,
-    clientPhone: document.getElementById("clientPhone").value,
+    clientName: name,
+    clientPhone: phone,
     clientEmail: document.getElementById("clientEmail").value,
     date: document.getElementById("clientDate").value,
     time: document.getElementById("clientTime").value,
     status: "Pending",
     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-    method: method // store method for status updates
+    method
   };
 
-  db.collection("bookings").add(booking).then(docRef=>{
-    booking.id = docRef.id;
-    localStorage.setItem("latestBooking",JSON.stringify(booking));
-    showScreen("confirmation");
-    document.getElementById("cStyle").textContent = booking.style;
-    document.getElementById("cDate").textContent = booking.date;
-    document.getElementById("cTime").textContent = booking.time;
-    document.getElementById("cName").textContent = booking.clientName;
-    document.getElementById("cPhone").textContent = booking.clientPhone;
-    document.getElementById("cStatus").textContent = booking.status;
+  db.collection("bookings").add(booking)
+    .then(docRef => {
+      booking.id = docRef.id;
+      localStorage.setItem("latestBooking", JSON.stringify(booking));
+      showScreen("confirmation", 5);
 
-    // Send WhatsApp or SMS to client automatically
-    if(method==="whatsapp") sendWhatsAppToClient(booking,"✅ Booking Confirmed!");
-    else if(method==="sms") sendSmsToClient(booking,"✅ Booking Confirmed!");
-
-    // Always send WhatsApp to studio automatically
-    sendWhatsAppToStudio(booking);
-  }).catch(err=>alert(isSubmitting = false;
-document.querySelectorAll(".submit-btn").forEach(btn => {
-  btn.textContent = btn.textContent.includes("SMS")
-    ? "✅ Confirm Booking (SMS)"
-    : "📱 Send Booking on WhatsApp";
-});
-"Error saving booking: "+err));
+      if (method === "whatsapp") sendWhatsAppToClient(booking, "✅ Booking Confirmed!");
+      if (method === "sms") sendSmsToClient(booking, "✅ Booking Confirmed!");
+    })
+    .catch(err => {
+      alert("Error saving booking: " + err);
+      resetSubmitButtons();
+    });
 }
+
 
 function getMinutesFromEstimate(estimate) {
   // Example: "3 – 4 hours" → take MAX value
@@ -699,6 +727,17 @@ function updateBookingStatus(id,status){
     }
   }).catch(err=>console.error(err));
 }
+
+  function resetSubmitButtons() {
+  isSubmitting = false;
+  document.querySelectorAll(".submit-btn").forEach(btn => {
+    btn.disabled = false;
+    btn.textContent = btn.textContent.includes("SMS")
+      ? "✅ Confirm Booking (SMS)"
+      : "📱 Send Booking on WhatsApp";
+  });
+}
+
 </script>
 </body>
 </html>
