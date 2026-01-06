@@ -45,6 +45,27 @@ body {
   display: block;
 }
 
+  /* Style cards image */
+.style-card img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+/* Make cards consistent */
+.style-card {
+  text-align: center;
+}
+
+/* Estimated time text */
+.time {
+  font-size: 14px;
+  color: #6b4f3f;
+  margin: 5px 0;
+}
+
 .button {
   width: 100%;
   padding: 12px;
@@ -119,7 +140,7 @@ body {
     <button class="button" onclick="selectStyle('Knotless Braids')">Select</button>
   </div>
  <div class="style-card">
-    <img src="images\with beads.webp"" alt="Description of the image">
+    <img src="images\with beads.webp" alt="Description of the image">
     <p><strong>Cornflower with Beads</strong></p>
     <button class="button" onclick="selectStyle('Knotless Braids')">Select</button>
   </div>
@@ -128,20 +149,31 @@ body {
 
 <div id="length" class="screen">
   <h2>Select Length</h2>
+
   <div class="style-card">
-    <p>Short – R<span id="shortPrice"></span></p>
+    <p><strong>Short</strong></p>
+    <p>Price: R<span id="shortPrice"></span></p>
+    <p class="time">⏱ <span id="shortTime"></span></p>
     <button class="button" onclick="selectLength('Short')">Choose</button>
   </div>
+
   <div class="style-card">
-    <p>Medium – R<span id="mediumPrice"></span></p>
+    <p><strong>Medium</strong></p>
+    <p>Price: R<span id="mediumPrice"></span></p>
+    <p class="time">⏱ <span id="mediumTime"></span></p>
     <button class="button" onclick="selectLength('Medium')">Choose</button>
   </div>
+
   <div class="style-card">
-    <p>Long – R<span id="longPrice"></span></p>
+    <p><strong>Long</strong></p>
+    <p>Price: R<span id="longPrice"></span></p>
+    <p class="time">⏱ <span id="longTime"></span></p>
     <button class="button" onclick="selectLength('Long')">Choose</button>
   </div>
+
   <button class="button" onclick="showScreen('styles',2)">Back</button>
 </div>
+
 
 <div id="date" class="screen">
   <h2>Date & Time</h2>
@@ -204,6 +236,34 @@ const prices = {
   "Cornflower with Beads": { Short: 280, Medium: 310, Long: 380 }
 };
 
+const times = {
+  "Box Braids": {
+    Short: "2 – 3 hours",
+    Medium: "3 – 4 hours",
+    Long: "4 – 5 hours"
+  },
+  "Knotless Braids": {
+    Short: "3 – 4 hours",
+    Medium: "4 – 5 hours",
+    Long: "5 – 6 hours"
+  },
+  "Straight back": {
+    Short: "1 – 1.5 hours",
+    Medium: "1.5 – 2 hours",
+    Long: "2 – 2.5 hours"
+  },
+  "Cornflower": {
+    Short: "1.5 – 2 hours",
+    Medium: "2 – 2.5 hours",
+    Long: "2.5 – 3 hours"
+  },
+  "Cornflower with Beads": {
+    Short: "2 – 2.5 hours",
+    Medium: "2.5 – 3 hours",
+    Long: "3 – 3.5 hours"
+  }
+};
+
 // ----------------- FIREBASE -----------------
 const firebaseConfig = {
   apiKey: "AIzaSyDYzO6pW5fjL6OhKrtELohjpzev8znveys",
@@ -232,10 +292,16 @@ function showScreen(id, step) {
 // ----------------- SELECT STYLE & LENGTH -----------------
 function selectStyle(style) {
   selectedStyle = style;
+
   document.getElementById('shortPrice').textContent = prices[style].Short;
   document.getElementById('mediumPrice').textContent = prices[style].Medium;
   document.getElementById('longPrice').textContent = prices[style].Long;
-  showScreen('length',3);
+
+  document.getElementById('shortTime').textContent = times[style].Short;
+  document.getElementById('mediumTime').textContent = times[style].Medium;
+  document.getElementById('longTime').textContent = times[style].Long;
+
+  showScreen('length', 3);
 }
 
 function selectLength(length) {
