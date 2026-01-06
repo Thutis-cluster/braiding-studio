@@ -560,7 +560,7 @@ function confirmBooking(method) {
       showScreen("confirmation", 5);
 
       // Send notification
-      if (method === "whatsapp") sendWhatsAppToClient(booking, "✅ Booking Confirmed!");
+if (method === "whatsapp") sendWhatsAppBooking(booking, method);
       if (method === "sms") sendSmsToClient(booking, "✅ Booking Confirmed!");
     })
     .catch(err => {
@@ -590,44 +590,40 @@ const TIME_PER_SLOT_MINUTES = 90; // 1.5 hours
 }
   
 // Send WhatsApp to studio
-  function sendWhatsApp() {
-  const phoneNumber = "27794380103"; // <-- replace with YOUR WhatsApp number
+function sendWhatsAppBooking(booking, method) {
+  if (method !== "whatsapp") return;
 
-  const message =
+  // --- 1️⃣ Send simple booking request to studio ---
+  const studioPhone = "27794380103"; // studio number
+  const studioMessage =
     "Hello Mumsy Braids Studio,%0A%0A" +
     "I would like to book an appointment.%0A%0A" +
-    "Style: " + selectedStyle + "%0A" +
-    "Length: " + selectedLength + "%0A" +
-    "Total Price: R" + selectedPrice + "%0A%0A" +
+    `Style: ${booking.style}%0A` +
+    `Length: ${booking.length}%0A` +
+    `Total Price: R${booking.price}%0A%0A` +
     "Thank you.";
 
-  window.open(
-    "https://wa.me/" + phoneNumber + "?text=" + message,
-    "_blank"
-  );
-}
+  window.open(`https://wa.me/${studioPhone}?text=${studioMessage}`, "_blank");
 
-// Send WhatsApp to client with full booking details
-function sendWhatsAppToClient(booking, messageIntro = "") {
-  let phone = booking.clientPhone.replace(/\D/g, ''); // remove non-numbers
+  // --- 2️⃣ Send full booking details to client ---
+  let clientPhone = booking.clientPhone.replace(/\D/g, '');
+  if (clientPhone.startsWith("0")) clientPhone = "27" + clientPhone.slice(1);
 
-  // If phone starts with 0, replace with country code (example for South Africa)
-  if (phone.startsWith("0")) phone = "27" + phone.slice(1);
+  const clientMessage = `✅ Booking Confirmed!\n\nHi ${booking.clientName}, here are your booking details:\n\n` +
+                        `💇 Style: ${booking.style}\n` +
+                        `📏 Length: ${booking.length}\n` +
+                        `💰 Price: R${booking.price}\n` +
+                        `⏱ Estimated Time: ${booking.timeEstimate}\n` +
+                        `📅 Date: ${booking.date}\n` +
+                        `🕒 Time: ${booking.time}\n` +
+                        `✅ Status: ${booking.status}\n\n` +
+                        `🔹 Hair Prep: Wash & dry hair before appointment\n` +
+                        `🔹 Cancellation: 24h notice required`;
 
-  // Compose message
-  const message = `${messageIntro}\n\nHi ${booking.clientName}, here are your booking details:\n\n` +
-                  `💇 Style: ${booking.style}\n` +
-                  `📏 Length: ${booking.length}\n` +
-                  `💰 Price: R${booking.price}\n` +
-                  `⏱ Estimated Time: ${booking.timeEstimate}\n` +
-                  `📅 Date: ${booking.date}\n` +
-                  `🕒 Time: ${booking.time}\n` +
-                  `✅ Status: ${booking.status}\n\n` +
-                  `🔹 Hair Prep: Wash & dry hair before appointment\n` +
-                  `🔹 Cancellation: 24h notice required`;
-
-  // Open WhatsApp chat in a new tab
-  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, "_blank");
+  // Small delay to avoid browser blocking multiple windows
+  setTimeout(() => {
+    window.open(`https://wa.me/${clientPhone}?text=${encodeURIComponent(clientMessage)}`, "_blank`);
+  }, 500);
 }
 
 // Send SMS to client
