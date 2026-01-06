@@ -495,63 +495,78 @@ function validateClientForm() {
 }
   
 function confirmBooking(method) {
-  if (isSubmitting) return;
+  if (isSubmitting) return; // prevent double submissions
   isSubmitting = true;
 
-  // disable buttons
+  // disable all submit buttons while processing
   document.querySelectorAll(".submit-btn").forEach(btn => {
     btn.disabled = true;
     btn.textContent = "⏳ Submitting...";
   });
 
-  // working hours check
-  const selectedHour = getHourFromTime(
-    document.getElementById("clientTime").value
-  );
+  // --- Get client details safely ---
+  const clientName = document.getElementById("clientName").value.trim();
+  const clientPhone = document.getElementById("clientPhone").value.trim();
+  const clientEmail = document.getElementById("clientEmail").value.trim();
+  const clientDate = document.getElementById("clientDate").value;
+  const clientTime = document.getElementById("clientTime").value;
 
+  // --- Validate required fields ---
+  if (!clientName || !clientPhone) {
+    alert("⚠️ Please fill in your Name and Phone.");
+    resetSubmitButtons();
+    return;
+  }
+
+  // --- Check working hours ---
+  const selectedHour = getHourFromTime(clientTime);
   if (selectedHour < WORK_START || selectedHour >= WORK_END) {
     alert("⛔ Bookings are only available between 09:00 and 17:00.");
     resetSubmitButtons();
     return;
   }
 
-  // time slot length check
+  // --- Check if style duration fits the time slot ---
   const requiredMinutes = getMinutesFromEstimate(selectedTimeEstimate);
   if (requiredMinutes > TIME_PER_SLOT_MINUTES) {
-    alert("⛔ This style needs about " + selectedTimeEstimate);
+    alert(`⛔ This style requires about ${selectedTimeEstimate}, which exceeds the available slot.`);
     resetSubmitButtons();
     return;
   }
 
+  // --- Create booking object ---
   const booking = {
     style: selectedStyle,
     length: selectedLength,
     timeEstimate: selectedTimeEstimate,
     price: selectedPrice,
-    clientName: name,
-    clientPhone: phone,
-    clientEmail: document.getElementById("clientEmail").value,
-    date: document.getElementById("clientDate").value,
-    time: document.getElementById("clientTime").value,
+    clientName,
+    clientPhone,
+    clientEmail,
+    date: clientDate,
+    time: clientTime,
     status: "Pending",
     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
     method
   };
 
+  // --- Save booking to Firebase ---
   db.collection("bookings").add(booking)
     .then(docRef => {
       booking.id = docRef.id;
       localStorage.setItem("latestBooking", JSON.stringify(booking));
       showScreen("confirmation", 5);
 
+      // Send notification
       if (method === "whatsapp") sendWhatsAppToClient(booking, "✅ Booking Confirmed!");
       if (method === "sms") sendSmsToClient(booking, "✅ Booking Confirmed!");
     })
     .catch(err => {
-      alert("Error saving booking: " + err);
+      alert("❌ Error saving booking: " + err);
       resetSubmitButtons();
     });
 }
+
 
 
 function getMinutesFromEstimate(estimate) {
