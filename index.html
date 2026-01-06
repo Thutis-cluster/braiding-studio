@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mumsy Braids Studio Booking</title>
 
-    <!-- Firebase SDKs -->
+<!-- Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -24,12 +24,14 @@ body {
   padding: 10px;
   background: #fff5f0;
 }
+
 .progress-step {
   width: 20%;
   height: 6px;
   background: #e0d5cc;
   border-radius: 3px;
 }
+
 .progress-step.active {
   background: #f5b7a3;
 }
@@ -38,6 +40,7 @@ body {
   display: none;
   padding: 20px;
 }
+
 .screen.active {
   display: block;
 }
@@ -51,59 +54,27 @@ body {
   border-radius: 6px;
   margin: 10px 0;
   font-size: 16px;
+  cursor: pointer;
 }
 
-.style-card {
+.button:hover {
+  opacity: 0.9;
+}
+
+.style-card, .booking-card {
   background: #fff0e6;
   padding: 12px;
   margin: 10px 0;
   border-radius: 8px;
 }
 
-.booking-card {
-  padding: 12px;
-  margin: 10px 0;
-  border-radius: 6px;
-}
+.booking-card.pending { border-left: 5px solid #F1C40F; background-color: #fff9e6; }
+.booking-card.accepted { border-left: 5px solid #27AE60; background-color: #e6fff0; }
+.booking-card.declined { border-left: 5px solid #E74C3C; background-color: #ffe6e6; }
 
-.booking-card p {
-  margin: 5px 0;
-  font-size: 15px;
-}
-
-.booking-card button {
-  margin: 5px 5px 0 0;
-  width: 48%;
-}
-
-.button.accept {
-  background-color: #4CAF50; /* green */
-}
-
-.button.decline {
-  background-color: #E74C3C; /* red */
-}
-
-.button:hover {
-  opacity: 0.9;
-}
-    
-.booking-card.pending {
-  border-left: 5px solid #F1C40F; /* yellow */
-  background-color: #fff9e6;
-}
-
-.booking-card.accepted {
-  border-left: 5px solid #27AE60; /* green */
-  background-color: #e6fff0;
-}
-
-.booking-card.declined {
-  border-left: 5px solid #E74C3C; /* red */
-  background-color: #ffe6e6;
-}
-
-
+.booking-card button { margin: 5px 5px 0 0; width: 48%; }
+.button.accept { background-color: #4CAF50; }
+.button.decline { background-color: #E74C3C; }
 </style>
 </head>
 
@@ -118,60 +89,51 @@ body {
   <div id="step5" class="progress-step"></div>
 </div>
 
-<!-- Home -->
+<!-- Screens -->
 <div id="home" class="screen active">
   <h1>Mumsy Braids Studio</h1>
   <button class="button" onclick="showScreen('styles',2)">Book Appointment</button>
+  <button class="button" onclick="openAdmin()">Owner Admin Panel</button>
 </div>
 
-<!-- Styles -->
 <div id="styles" class="screen">
   <h2>Select Style</h2>
-
   <div class="style-card">
     <p><strong>Box Braids</strong></p>
     <button class="button" onclick="selectStyle('Box Braids')">Select</button>
   </div>
-
   <div class="style-card">
     <p><strong>Knotless Braids</strong></p>
     <button class="button" onclick="selectStyle('Knotless Braids')">Select</button>
   </div>
-
   <button class="button" onclick="showScreen('home',1)">Back</button>
 </div>
 
-<!-- Length -->
 <div id="length" class="screen">
   <h2>Select Length</h2>
-
   <div class="style-card">
     <p>Short – R<span id="shortPrice"></span></p>
     <button class="button" onclick="selectLength('Short')">Choose</button>
   </div>
-
   <div class="style-card">
     <p>Medium – R<span id="mediumPrice"></span></p>
     <button class="button" onclick="selectLength('Medium')">Choose</button>
   </div>
-
   <div class="style-card">
     <p>Long – R<span id="longPrice"></span></p>
     <button class="button" onclick="selectLength('Long')">Choose</button>
   </div>
-
   <button class="button" onclick="showScreen('styles',2)">Back</button>
 </div>
 
-<!-- Date -->
 <div id="date" class="screen">
   <h2>Date & Time</h2>
-    <input type="date" id="clientDate">
-   <select id="clientTime">
-  <option>10:00</option>
-  <option>11:30</option>
-  <option>1:00 PM</option>
- </select>
+  <input type="date" id="clientDate">
+  <select id="clientTime">
+    <option>10:00</option>
+    <option>11:30</option>
+    <option>13:00</option>
+  </select>
   <button class="button" onclick="showScreen('client',4)">Next</button>
 </div>
 
@@ -180,19 +142,11 @@ body {
   <input id="clientName" placeholder="Full Name">
   <input id="clientPhone" placeholder="Phone">
   <input type="email" id="clientEmail" placeholder="Email">
-  <input type="date" id="clientDate">
-  <select id="clientTime">
-    <option>10:00</option>
-    <option>11:30</option>
-    <option>1:00 PM</option>
-  </select>
-  <button class="button" onclick="saveBookingToLocal()">Confirm Booking</button>
-  <button class="button" onclick="sendWhatsApp()">Send Booking on WhatsApp</button>
+
+  <button class="button" onclick="confirmBooking('sms')">✅ Confirm Booking (SMS)</button>
+  <button class="button" onclick="confirmBooking('whatsapp')">📱 Send Booking on WhatsApp</button>
 </div>
 
-
-
-<!-- Confirmation -->
 <div id="confirmation" class="screen">
   <h2>✅ Booking Confirmed</h2>
   <p>Style: <span id="cStyle"></span></p>
@@ -209,61 +163,50 @@ body {
   <button class="button" onclick="showScreen('home',1)">Done</button>
 </div>
 
-
-<!-- Admin Panel -->
 <div id="admin" class="screen">
   <h2>💼 Owner Admin Panel</h2>
-
   <div id="bookingsList">
-    <!-- All bookings will be displayed here dynamically -->
+    <p>Loading bookings...</p>
   </div>
 </div>
 
 <script>
+// ----------------- VARIABLES -----------------
 let selectedStyle = "";
 let selectedLength = "";
 let selectedPrice = 0;
-let bookingStatus = "Pending";
 
 const prices = {
   "Box Braids": { Short: 180, Medium: 220, Long: 260 },
   "Knotless Braids": { Short: 200, Medium: 250, Long: 300 }
 };
 
+// ----------------- FIREBASE -----------------
+const firebaseConfig = {
+  apiKey: "AIzaSyDYzO6pW5fjL6OhKrtELohjpzev8znveys",
+  authDomain: "mumsy-braids-booking.firebaseapp.com",
+  projectId: "mumsy-braids-booking",
+  storageBucket: "mumsy-braids-booking.firebasestorage.app",
+  messagingSenderId: "494103742106",
+  appId: "1:494103742106:web:9b8f7cfd4430d045bec123",
+  measurementId: "G-090W6YHJ09"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+console.log("Firebase connected:", firebase.apps.length > 0);
+
+// ----------------- SCREEN NAVIGATION -----------------
 function showScreen(id, step) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
 
-  for (let i = 1; i <= 5; i++) {
-    document.getElementById('step'+i).classList.remove('active');
-  }
-  for (let i = 1; i <= step; i++) {
-    document.getElementById('step'+i).classList.add('active');
-  }
+  for (let i = 1; i <= 5; i++) document.getElementById('step'+i).classList.remove('active');
+  for (let i = 1; i <= step; i++) document.getElementById('step'+i).classList.add('active');
 
-if (id === 'confirmation') {
-  document.getElementById('cStyle').textContent = selectedStyle;
-  document.getElementById('cLength').textContent = selectedLength;
-  document.getElementById('cPrice').textContent = selectedPrice;
-}
+  if(id === "confirmation") displayConfirmation();
 }
 
-function showConfirmationScreen() {
-  const booking = JSON.parse(localStorage.getItem("latestBooking"));
-
-  document.getElementById("cStyle").textContent = booking.style;
-  document.getElementById("cLength").textContent = booking.length;
-  document.getElementById("cPrice").textContent = booking.price;
-  document.getElementById("cDate").textContent = booking.date;
-  document.getElementById("cTime").textContent = booking.time;
-  document.getElementById("cName").textContent = booking.clientName;
-  document.getElementById("cPhone").textContent = booking.clientPhone;
-  document.getElementById("cEmail").textContent = booking.clientEmail;
-  document.getElementById("cStatus").textContent = booking.status;
-
-  showScreen("confirmation", 5);
-}
-    
+// ----------------- SELECT STYLE & LENGTH -----------------
 function selectStyle(style) {
   selectedStyle = style;
   document.getElementById('shortPrice').textContent = prices[style].Short;
@@ -278,128 +221,7 @@ function selectLength(length) {
   showScreen('date',4);
 }
 
-    function saveBookingToLocal() {
-  const booking = {
-    style: selectedStyle,
-    length: selectedLength,
-    price: selectedPrice,
-    clientName: document.getElementById("clientName").value,
-    clientPhone: document.getElementById("clientPhone").value,
-    clientEmail: document.getElementById("clientEmail").value,
-    date: document.getElementById("clientDate").value,
-    time: document.getElementById("clientTime").value,
-    status: "Pending"  // default status
-  };
-
-  // Save to localStorage
-  localStorage.setItem("latestBooking", JSON.stringify(booking));
-
-  // Show confirmation screen
-  showConfirmationScreen();
-}
-
-  function sendWhatsApp() {
-  const phoneNumber = "27794380103"; // <-- replace with YOUR WhatsApp number
-
-  const message =
-    "Hello Mumsy Braids Studio,%0A%0A" +
-    "I would like to book an appointment.%0A%0A" +
-    "Style: " + selectedStyle + "%0A" +
-    "Length: " + selectedLength + "%0A" +
-    "Total Price: R" + selectedPrice + "%0A%0A" +
-    "Thank you.";
-
-  window.open(
-    "https://wa.me/" + phoneNumber + "?text=" + message,
-    "_blank"
-  );
-}
-
-function openAdmin() {
-  const list = document.getElementById("bookingsList");
-
-  // Listen to real-time updates
-  db.collection("bookings").orderBy("createdAt", "desc")
-    .onSnapshot((snapshot) => {
-      if (snapshot.empty) {
-        list.innerHTML = "<p>No bookings yet.</p>";
-        return;
-      }
-
-      list.innerHTML = ""; // clear list
-      snapshot.forEach((doc) => {
-        const booking = doc.data();
-        const id = doc.id;
-
-        let statusClass = "";
-        if (booking.status === "Pending") statusClass = "pending";
-        if (booking.status === "Accepted") statusClass = "accepted";
-        if (booking.status === "Declined") statusClass = "declined";
-
-        const card = document.createElement("div");
-        card.classList.add("booking-card", statusClass);
-
-        card.innerHTML = `
-         <p><strong>Status:</strong> <span id="status-${id}">${booking.status}</span></p>
-          <p><strong>Style:</strong> ${booking.style}</p>
-          <p><strong>Length:</strong> ${booking.length}</p>
-          <p><strong>Price:</strong> R${booking.price}</p>
-          <p><strong>Date:</strong> ${booking.date || "-"}</p>
-          <p><strong>Time:</strong> ${booking.time || "-"}</p>
-          <p><strong>Name:</strong> ${booking.clientName || "-"}</p>
-          <p><strong>Phone:</strong> ${booking.clientPhone || "-"}</p>
-          <p><strong>Email:</strong> ${booking.clientEmail || "-"}</p>
-          <button class="button accept" onclick="updateBookingStatus('${id}', 'Accepted')">✅ Accept</button>
-          <button class="button decline" onclick="updateBookingStatus('${id}', 'Declined')">❌ Decline</button>
-        `;
-        list.appendChild(card);
-      });
-    });
-
-  showScreen("admin", 5);
-}
-
-
-function updateBookingStatus(id, status) {
-  const bookingRef = db.collection("bookings").doc(id);
-
-  bookingRef.update({ status: status })
-    .then(() => {
-      console.log(`Booking ${id} updated to ${status}`);
-
-      // Update localStorage if this is the client's booking
-      const latestBooking = JSON.parse(localStorage.getItem("latestBooking"));
-      if (latestBooking.id === id) {
-        latestBooking.status = status;
-        localStorage.setItem("latestBooking", JSON.stringify(latestBooking));
-        if (document.getElementById("confirmation").classList.contains("active")) {
-          document.getElementById("cStatus").textContent = status;
-        }
-      }
-    })
-    .catch(err => console.error(err));
-}
-
- // Your Firebase configuration
-  const firebaseConfig = {
-  apiKey: "AIzaSyDYzO6pW5fjL6OhKrtELohjpzev8znveys",
-  authDomain: "mumsy-braids-booking.firebaseapp.com",
-  projectId: "mumsy-braids-booking",
-  storageBucket: "mumsy-braids-booking.firebasestorage.app",
-  messagingSenderId: "494103742106",
-  appId: "1:494103742106:web:9b8f7cfd4430d045bec123",
-  measurementId: "G-090W6YHJ09"
-  };
-  
-  // Initialize Firebase
-  firebase.initializeApp(firebaseConfig);
-
-  // Initialize services
-  const db = firebase.firestore();
-  const auth = firebase.auth();
-
-    console.log("Firebase connected:", firebase.apps.length > 0);
-
+// ----------------- SAVE BOOKING -----------------
 function saveBookingToFirebase() {
   const booking = {
     style: selectedStyle,
@@ -414,25 +236,144 @@ function saveBookingToFirebase() {
     createdAt: firebase.firestore.FieldValue.serverTimestamp()
   };
 
-  // Save locally
-  localStorage.setItem("latestBooking", JSON.stringify(booking));
-
-  // Save to Firestore
   db.collection("bookings").add(booking)
     .then((docRef) => {
-      console.log("Booking saved with ID:", docRef.id);
-      booking.id = docRef.id; // store doc ID for updates
+      console.log("Booking saved:", docRef.id);
+      booking.id = docRef.id;
       localStorage.setItem("latestBooking", JSON.stringify(booking));
-      showConfirmationScreen();
+      showScreen("confirmation",5);
+      sendWhatsAppToClient(booking, "Thank you for your booking! Your appointment is pending confirmation.");
     })
-    .catch((error) => {
-      console.error("Error saving booking:", error);
-      alert("Error saving booking. Check Firestore rules.");
-    });
+    .catch(err => alert("Error saving booking. Check Firestore rules: "+err));
 }
 
-  
-</script>
+// ----------------- DISPLAY CONFIRMATION -----------------
+function displayConfirmation() {
+  const booking = JSON.parse(localStorage.getItem("latestBooking"));
+  if(!booking) return;
+  document.getElementById("cStyle").textContent = booking.style;
+  document.getElementById("cLength").textContent = booking.length;
+  document.getElementById("cPrice").textContent = booking.price;
+  document.getElementById("cDate").textContent = booking.date;
+  document.getElementById("cTime").textContent = booking.time;
+  document.getElementById("cName").textContent = booking.clientName;
+  document.getElementById("cPhone").textContent = booking.clientPhone;
+  document.getElementById("cEmail").textContent = booking.clientEmail;
+  document.getElementById("cStatus").textContent = booking.status;
+}
 
+function confirmBooking(method) {
+  const booking = {
+    style: selectedStyle,
+    length: selectedLength,
+    price: selectedPrice,
+    clientName: document.getElementById("clientName").value,
+    clientPhone: document.getElementById("clientPhone").value,
+    clientEmail: document.getElementById("clientEmail").value,
+    date: document.getElementById("clientDate").value,
+    time: document.getElementById("clientTime").value,
+    status: "Pending",
+    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    method: method // store method for status updates
+  };
+
+  db.collection("bookings").add(booking)
+    .then(docRef => {
+      console.log("Booking saved:", docRef.id);
+      booking.id = docRef.id;
+      localStorage.setItem("latestBooking", JSON.stringify(booking));
+      showScreen("confirmation",5);
+      
+      if(method === "whatsapp") sendWhatsAppToClient(booking, "Thank you for booking!");
+      else if(method === "sms") sendSmsToClient(booking, "Thank you for booking!");
+    })
+    .catch(err => alert("Error saving booking: " + err));
+}
+
+function sendWhatsAppToClient(booking, messageIntro="") {
+  const phone = booking.clientPhone.replace(/\D/g,''); 
+  const message = `${messageIntro}%0A%0ABooking Details:%0AStyle: ${booking.style}%0ALength: ${booking.length}%0APrice: R${booking.price}%0ADate: ${booking.date}%0ATime: ${booking.time}%0AStatus: ${booking.status}`;
+  window.open(`https://wa.me/${phone}?text=${message}`, "_blank");
+}
+
+function sendSmsToClient(booking, messageIntro="") {
+  const phone = booking.clientPhone.replace(/\D/g,''); 
+  const message = `${messageIntro}\nBooking Details:\nStyle: ${booking.style}\nLength: ${booking.length}\nPrice: R${booking.price}\nDate: ${booking.date}\nTime: ${booking.time}\nStatus: ${booking.status}`;
+  window.open(`sms:${phone}?body=${encodeURIComponent(message)}`, "_blank");
+}
+
+// ----------------- STATUS UPDATE -----------------
+function updateBookingStatus(id, status) {
+  const bookingRef = db.collection("bookings").doc(id);
+  bookingRef.update({ status: status })
+    .then(() => {
+      console.log("Booking updated:", id, status);
+      const latestBooking = JSON.parse(localStorage.getItem("latestBooking"));
+      if(latestBooking?.id === id) {
+        latestBooking.status = status;
+        localStorage.setItem("latestBooking", JSON.stringify(latestBooking));
+        if(document.getElementById("confirmation").classList.contains("active"))
+          document.getElementById("cStatus").textContent = status;
+
+        if(latestBooking.method === "whatsapp") 
+          sendWhatsAppToClient(latestBooking, "Your booking status has been updated!");
+        else if(latestBooking.method === "sms")
+          sendSmsToClient(latestBooking, "Your booking status has been updated!");
+      }
+    })
+    .catch(err => console.error(err));
+}
+
+// ----------------- ADMIN PANEL -----------------
+function openAdmin() {
+  const list = document.getElementById("bookingsList");
+  db.collection("bookings").orderBy("createdAt","desc")
+    .onSnapshot(snapshot => {
+      if(snapshot.empty) {
+        list.innerHTML = "<p>No bookings yet.</p>";
+        return;
+      }
+      list.innerHTML = "";
+      snapshot.forEach(doc => {
+        const b = doc.data();
+        const card = document.createElement("div");
+        card.classList.add("booking-card");
+        card.classList.add(b.status.toLowerCase());
+        card.innerHTML = `
+          <p><strong>Status:</strong> <span id="status-${doc.id}">${b.status}</span></p>
+          <p><strong>Style:</strong> ${b.style}</p>
+          <p><strong>Length:</strong> ${b.length}</p>
+          <p><strong>Price:</strong> R${b.price}</p>
+          <p><strong>Date:</strong> ${b.date || "-"}</p>
+          <p><strong>Time:</strong> ${b.time || "-"}</p>
+          <p><strong>Name:</strong> ${b.clientName || "-"}</p>
+          <p><strong>Phone:</strong> ${b.clientPhone || "-"}</p>
+          <p><strong>Email:</strong> ${b.clientEmail || "-"}</p>
+          <button class="button accept" onclick="updateBookingStatus('${doc.id}','Accepted')">✅ Accept</button>
+          <button class="button decline" onclick="updateBookingStatus('${doc.id}','Declined')">❌ Decline</button>
+        `;
+        list.appendChild(card);
+      });
+    });
+  showScreen("admin",5);
+}
+
+function updateBookingStatus(id, status) {
+  const bookingRef = db.collection("bookings").doc(id);
+  bookingRef.update({ status: status })
+    .then(() => {
+      console.log("Booking updated:", id, status);
+      const latestBooking = JSON.parse(localStorage.getItem("latestBooking"));
+      if(latestBooking?.id === id) {
+        latestBooking.status = status;
+        localStorage.setItem("latestBooking", JSON.stringify(latestBooking));
+        if(document.getElementById("confirmation").classList.contains("active"))
+          document.getElementById("cStatus").textContent = status;
+        sendWhatsAppToClient(latestBooking, "Your booking status has been updated!");
+      }
+    })
+    .catch(err => console.error(err));
+}
+</script>
 </body>
 </html>
