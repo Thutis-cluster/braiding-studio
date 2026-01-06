@@ -163,31 +163,72 @@ body {
 
 <div id="styles" class="screen">
   <h2>Select Style</h2>
+
   <div class="style-card">
-    <img src="images/IMG-20251228-WA0018.jpg" alt="Description of the image">
+    <img src="images/IMG-20251228-WA0018.jpg" alt="Box Braids">
     <p><strong>Box Braids</strong></p>
     <button class="button" onclick="selectStyle('Box Braids')">Select</button>
   </div>
+
   <div class="style-card">
-    <img src="images/IMG-20251228-WA0010.jpg" alt="Description of the image">
+    <img src="images/IMG-20251228-WA0010.jpg" alt="Knotless Braids">
     <p><strong>Knotless Braids</strong></p>
     <button class="button" onclick="selectStyle('Knotless Braids')">Select</button>
   </div>
- <div class="style-card">
-    <img src="images/ad33c7c54379f42c.jpeg" alt="Description of the image">
+
+  <div class="style-card">
+    <img src="images/ad33c7c54379f42c.jpeg" alt="Straight back">
     <p><strong>Straight back</strong></p>
-    <button class="button" onclick="selectStyle('Knotless Braids')">Select</button>
+    <button class="button" onclick="selectStyle('Straight back')">Select</button>
   </div>
- <div class="style-card">
-    <img src="images/cornflowers.webp" alt="Description of the image">
+
+  <div class="style-card">
+    <img src="images/cornflowers.webp" alt="Cornflower">
     <p><strong>Cornflower</strong></p>
-    <button class="button" onclick="selectStyle('Knotless Braids')">Select</button>
+    <button class="button" onclick="selectStyle('Cornflower')">Select</button>
   </div>
- <div class="style-card">
-    <img src="images\with beads.webp" alt="Description of the image">
+
+  <div class="style-card">
+    <img src="images/with beads.webp" alt="Cornflower with Beads">
     <p><strong>Cornflower with Beads</strong></p>
+    <button class="button" onclick="selectStyle('Cornflower with Beads')">Select</button>
+  </div>
+
+  <button class="button" onclick="showScreen('home',1)">Back</button>
+</div>
+<div id="styles" class="screen">
+  <h2>Select Style</h2>
+
+  <div class="style-card">
+    <img src="images/IMG-20251228-WA0018.jpg" alt="Box Braids">
+    <p><strong>Box Braids</strong></p>
+    <button class="button" onclick="selectStyle('Box Braids')">Select</button>
+  </div>
+
+  <div class="style-card">
+    <img src="images/IMG-20251228-WA0010.jpg" alt="Knotless Braids">
+    <p><strong>Knotless Braids</strong></p>
     <button class="button" onclick="selectStyle('Knotless Braids')">Select</button>
   </div>
+
+  <div class="style-card">
+    <img src="images/ad33c7c54379f42c.jpeg" alt="Straight back">
+    <p><strong>Straight back</strong></p>
+    <button class="button" onclick="selectStyle('Straight back')">Select</button>
+  </div>
+
+  <div class="style-card">
+    <img src="images/cornflowers.webp" alt="Cornflower">
+    <p><strong>Cornflower</strong></p>
+    <button class="button" onclick="selectStyle('Cornflower')">Select</button>
+  </div>
+
+  <div class="style-card">
+    <img src="images/with beads.webp" alt="Cornflower with Beads">
+    <p><strong>Cornflower with Beads</strong></p>
+    <button class="button" onclick="selectStyle('Cornflower with Beads')">Select</button>
+  </div>
+
   <button class="button" onclick="showScreen('home',1)">Back</button>
 </div>
 
@@ -372,14 +413,17 @@ console.log("Firebase connected:", firebase.apps.length > 0);
 function selectStyle(style) {
   selectedStyle = style;
 
+  // Update price spans
   document.getElementById('shortPrice').textContent = prices[style].Short;
   document.getElementById('mediumPrice').textContent = prices[style].Medium;
   document.getElementById('longPrice').textContent = prices[style].Long;
 
+  // Update time spans
   document.getElementById('shortTime').textContent = times[style].Short;
   document.getElementById('mediumTime').textContent = times[style].Medium;
   document.getElementById('longTime').textContent = times[style].Long;
 
+  // Automatically show the length screen
   showScreen('length', 3);
 }
 
@@ -389,7 +433,6 @@ function selectLength(length) {
   selectedTimeEstimate = times[selectedStyle][length];
   showScreen('date', 4);
 }
-
 
 // ----------------- SAVE BOOKING -----------------
 function saveBookingToFirebase() {
@@ -456,27 +499,6 @@ document.querySelectorAll(".submit-btn").forEach(btn => {
   btn.disabled = true;
   btn.textContent = "⏳ Submitting...";
 });
-
-// -------- REQUIRED FIELD VALIDATION --------
-const name = document.getElementById("clientName").value.trim();
-const phone = document.getElementById("clientPhone").value.trim();
-
-document.getElementById("nameError").textContent = "";
-document.getElementById("phoneError").textContent = "";
-
-let hasError = false;
-
-if (!name) {
-  document.getElementById("nameError").textContent = "Full name is required";
-  hasError = true;
-}
-
-if (!phone) {
-  document.getElementById("phoneError").textContent = "Phone number is required";
-  hasError = true;
-}
-
-if (hasError) return;
   
 function confirmBooking(method) {
   if (isSubmitting) return;
