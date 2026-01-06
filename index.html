@@ -61,11 +61,9 @@ body {
 }
 
 .booking-card {
-  background: #fff0e6;
-  padding: 15px;
-  border-radius: 10px;
+  padding: 12px;
   margin: 10px 0;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border-radius: 6px;
 }
 
 .booking-card p {
@@ -74,7 +72,8 @@ body {
 }
 
 .booking-card button {
-  margin-right: 5px;
+  margin: 5px 5px 0 0;
+  width: 48%;
 }
 
 .button.accept {
@@ -88,7 +87,7 @@ body {
 .button:hover {
   opacity: 0.9;
 }
-
+    
 .booking-card.pending {
   border-left: 5px solid #F1C40F; /* yellow */
   background-color: #fff9e6;
@@ -167,26 +166,31 @@ body {
 <!-- Date -->
 <div id="date" class="screen">
   <h2>Date & Time</h2>
-  <input type="date">
-  <select>
+    <input type="date" id="clientDate">
+   <select id="clientTime">
+  <option>10:00</option>
+  <option>11:30</option>
+  <option>1:00 PM</option>
+ </select>
+  <button class="button" onclick="showScreen('client',4)">Next</button>
+</div>
+
+<div id="client" class="screen">
+  <h2>Your Details</h2>
+  <input id="clientName" placeholder="Full Name">
+  <input id="clientPhone" placeholder="Phone">
+  <input type="email" id="clientEmail" placeholder="Email">
+  <input type="date" id="clientDate">
+  <select id="clientTime">
     <option>10:00</option>
     <option>11:30</option>
     <option>1:00 PM</option>
   </select>
-  <button class="button" onclick="showScreen('client',4)">Next</button>
-</div>
-
-<!-- Client -->
-<div id="client" class="screen">
-  <h2>Your Details</h2>
-  <input placeholder="Full Name">
-  <input placeholder="Phone">
-  <input type="email" placeholder="Email">
-<button class="button" onclick="saveBookingToFirebase()">
-  Confirm Booking
-</button>
+  <button class="button" onclick="saveBookingToLocal()">Confirm Booking</button>
   <button class="button" onclick="sendWhatsApp()">Send Booking on WhatsApp</button>
 </div>
+
+
 
 <!-- Confirmation -->
 <div id="confirmation" class="screen">
@@ -194,13 +198,17 @@ body {
   <p>Style: <span id="cStyle"></span></p>
   <p>Length: <span id="cLength"></span></p>
   <p>Total: R<span id="cPrice"></span></p>
-  <p>Hair Prep: Wash & dry hair before appointment</p> <p>Cancellation: 24h notice required</p>
-  <p style="color:#a67c52;">
-  ⏳ Your booking is pending approval.
-  You will be contacted once it is accepted.
-</p>
+  <p>Date: <span id="cDate"></span></p>
+  <p>Time: <span id="cTime"></span></p>
+  <p>Name: <span id="cName"></span></p>
+  <p>Phone: <span id="cPhone"></span></p>
+  <p>Email: <span id="cEmail"></span></p>
+  <p>Status: <span id="cStatus"></span></p>
+  <p>Hair Prep: Wash & dry hair before appointment</p>
+  <p>Cancellation: 24h notice required</p>
   <button class="button" onclick="showScreen('home',1)">Done</button>
 </div>
+
 
 <!-- Admin Panel -->
 <div id="admin" class="screen">
@@ -209,8 +217,6 @@ body {
   <div id="bookingsList">
     <!-- All bookings will be displayed here dynamically -->
   </div>
-
-  <button class="button" onclick="showScreen('home',1)">🏠 Back Home</button>
 </div>
 
 <script>
@@ -242,6 +248,22 @@ if (id === 'confirmation') {
 }
 }
 
+function showConfirmationScreen() {
+  const booking = JSON.parse(localStorage.getItem("latestBooking"));
+
+  document.getElementById("cStyle").textContent = booking.style;
+  document.getElementById("cLength").textContent = booking.length;
+  document.getElementById("cPrice").textContent = booking.price;
+  document.getElementById("cDate").textContent = booking.date;
+  document.getElementById("cTime").textContent = booking.time;
+  document.getElementById("cName").textContent = booking.clientName;
+  document.getElementById("cPhone").textContent = booking.clientPhone;
+  document.getElementById("cEmail").textContent = booking.clientEmail;
+  document.getElementById("cStatus").textContent = booking.status;
+
+  showScreen("confirmation", 5);
+}
+    
 function selectStyle(style) {
   selectedStyle = style;
   document.getElementById('shortPrice').textContent = prices[style].Short;
@@ -254,6 +276,26 @@ function selectLength(length) {
   selectedLength = length;
   selectedPrice = prices[selectedStyle][length];
   showScreen('date',4);
+}
+
+    function saveBookingToLocal() {
+  const booking = {
+    style: selectedStyle,
+    length: selectedLength,
+    price: selectedPrice,
+    clientName: document.getElementById("clientName").value,
+    clientPhone: document.getElementById("clientPhone").value,
+    clientEmail: document.getElementById("clientEmail").value,
+    date: document.getElementById("clientDate").value,
+    time: document.getElementById("clientTime").value,
+    status: "Pending"  // default status
+  };
+
+  // Save to localStorage
+  localStorage.setItem("latestBooking", JSON.stringify(booking));
+
+  // Show confirmation screen
+  showConfirmationScreen();
 }
 
   function sendWhatsApp() {
@@ -275,21 +317,20 @@ function selectLength(length) {
 
 function openAdmin() {
   const list = document.getElementById("bookingsList");
-  list.innerHTML = "<p>Loading bookings...</p>";
 
-  db.collection("bookings").orderBy("createdAt", "desc").get()
-    .then((snapshot) => {
+  // Listen to real-time updates
+  db.collection("bookings").orderBy("createdAt", "desc")
+    .onSnapshot((snapshot) => {
       if (snapshot.empty) {
         list.innerHTML = "<p>No bookings yet.</p>";
         return;
       }
 
-      list.innerHTML = ""; // clear loading message
+      list.innerHTML = ""; // clear list
       snapshot.forEach((doc) => {
         const booking = doc.data();
         const id = doc.id;
 
-        // Determine class based on status
         let statusClass = "";
         if (booking.status === "Pending") statusClass = "pending";
         if (booking.status === "Accepted") statusClass = "accepted";
@@ -299,7 +340,7 @@ function openAdmin() {
         card.classList.add("booking-card", statusClass);
 
         card.innerHTML = `
-          <p><strong>Status:</strong> ${booking.status}</p>
+         <p><strong>Status:</strong> <span id="status-${id}">${booking.status}</span></p>
           <p><strong>Style:</strong> ${booking.style}</p>
           <p><strong>Length:</strong> ${booking.length}</p>
           <p><strong>Price:</strong> R${booking.price}</p>
@@ -311,40 +352,33 @@ function openAdmin() {
           <button class="button accept" onclick="updateBookingStatus('${id}', 'Accepted')">✅ Accept</button>
           <button class="button decline" onclick="updateBookingStatus('${id}', 'Declined')">❌ Decline</button>
         `;
-
         list.appendChild(card);
       });
-    })
-    .catch((err) => {
-      console.error(err);
-      list.innerHTML = "<p>Error loading bookings.</p>";
     });
 
   showScreen("admin", 5);
 }
 
-function acceptBooking() {
-  updateBookingStatus("Accepted");
-}
 
-function declineBooking() {
-  updateBookingStatus("Declined");
-}
+function updateBookingStatus(id, status) {
+  const bookingRef = db.collection("bookings").doc(id);
 
- function updateBookingStatus(docId, status) {
-  db.collection("bookings").doc(docId).update({
-    status: status
-  })
-  .then(() => {
-    alert(`Booking ${status}`);
-    openAdmin(); // refresh list automatically
-  })
-  .catch((err) => {
-    console.error(err);
-    alert("Error updating booking status.");
-  });
-}
+  bookingRef.update({ status: status })
+    .then(() => {
+      console.log(`Booking ${id} updated to ${status}`);
 
+      // Update localStorage if this is the client's booking
+      const latestBooking = JSON.parse(localStorage.getItem("latestBooking"));
+      if (latestBooking.id === id) {
+        latestBooking.status = status;
+        localStorage.setItem("latestBooking", JSON.stringify(latestBooking));
+        if (document.getElementById("confirmation").classList.contains("active")) {
+          document.getElementById("cStatus").textContent = status;
+        }
+      }
+    })
+    .catch(err => console.error(err));
+}
 
  // Your Firebase configuration
   const firebaseConfig = {
@@ -366,30 +400,37 @@ function declineBooking() {
 
     console.log("Firebase connected:", firebase.apps.length > 0);
 
-  function saveBookingToFirebase() {
-const booking = {
-  style: selectedStyle,
-  length: selectedLength,
-  price: selectedPrice,
-  status: "Pending",
-  clientName: document.querySelector("#client input[placeholder='Full Name']").value,
-  clientPhone: document.querySelector("#client input[placeholder='Phone']").value,
-  clientEmail: document.querySelector("#client input[type='email']").value,
-  date: document.querySelector("#date input[type='date']").value,
-  time: document.querySelector("#date select").value,
-  createdAt: firebase.firestore.FieldValue.serverTimestamp()
-};
+function saveBookingToFirebase() {
+  const booking = {
+    style: selectedStyle,
+    length: selectedLength,
+    price: selectedPrice,
+    clientName: document.getElementById("clientName").value,
+    clientPhone: document.getElementById("clientPhone").value,
+    clientEmail: document.getElementById("clientEmail").value,
+    date: document.getElementById("clientDate").value,
+    time: document.getElementById("clientTime").value,
+    status: "Pending",
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
 
+  // Save locally
+  localStorage.setItem("latestBooking", JSON.stringify(booking));
+
+  // Save to Firestore
   db.collection("bookings").add(booking)
-    .then(() => {
-      alert("Booking submitted! Status: Pending");
-      showScreen("confirmation", 5);
+    .then((docRef) => {
+      console.log("Booking saved with ID:", docRef.id);
+      booking.id = docRef.id; // store doc ID for updates
+      localStorage.setItem("latestBooking", JSON.stringify(booking));
+      showConfirmationScreen();
     })
     .catch((error) => {
-      alert("Error saving booking");
-      console.error(error);
+      console.error("Error saving booking:", error);
+      alert("Error saving booking. Check Firestore rules.");
     });
 }
+
   
 </script>
 
