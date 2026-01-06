@@ -307,8 +307,6 @@ function getHourFromTime(timeStr) {
   return numbers ? Math.max(...numbers.map(Number)) : 0;
 }
 
-
-
 const prices = {
   "Box Braids": { Short: 180, Medium: 220, Long: 260 },
   "Knotless Braids": { Short: 200, Medium: 250, Long: 300 },
@@ -392,16 +390,6 @@ function selectLength(length) {
   showScreen('date', 4);
 }
 
-  const selectedHour = getHourFromTime(
-  document.getElementById("clientTime").value
-);
-
-if (selectedHour < WORK_START || selectedHour >= WORK_END) {
-  alert("⛔ Bookings are only available between 09:00 and 17:00.");
-  isSubmitting = false;
-  return;
-}
-
 
 // ----------------- SAVE BOOKING -----------------
 function saveBookingToFirebase() {
@@ -462,9 +450,6 @@ function validateClientForm() {
     btn.disabled = !(nameValid && phoneValid);
   });
 }
-
-  if (isSubmitting) return;
-isSubmitting = true;
 
 // Disable buttons immediately
 document.querySelectorAll(".submit-btn").forEach(btn => {
@@ -573,16 +558,6 @@ function getMinutesFromEstimate(estimate) {
 
 const TIME_PER_SLOT_MINUTES = 90; // 1.5 hours
 
-  const requiredMinutes = getMinutesFromEstimate(selectedTimeEstimate);
-
-if (requiredMinutes > TIME_PER_SLOT_MINUTES) {
-  alert(
-    "⛔ This style needs about " +
-    selectedTimeEstimate +
-    ". Please choose an earlier or longer time slot."
-  );
-  return;
-}
 
   function updateAvailableTimes() {
   const select = document.getElementById("clientTime");
@@ -592,10 +567,6 @@ if (requiredMinutes > TIME_PER_SLOT_MINUTES) {
     option.disabled = requiredMinutes > TIME_PER_SLOT_MINUTES;
   });
 }
-
- showScreen('date', 4);
-updateAvailableTimes();
-
   
 // Send WhatsApp to studio
   function sendWhatsApp() {
