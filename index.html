@@ -99,13 +99,31 @@ body {
 <div id="styles" class="screen">
   <h2>Select Style</h2>
   <div class="style-card">
+    <img src="images/IMG-20251228-WA0018.jpg" alt="Description of the image">
     <p><strong>Box Braids</strong></p>
     <button class="button" onclick="selectStyle('Box Braids')">Select</button>
   </div>
   <div class="style-card">
+    <img src="images/IMG-20251228-WA0010.jpg" alt="Description of the image">
     <p><strong>Knotless Braids</strong></p>
     <button class="button" onclick="selectStyle('Knotless Braids')">Select</button>
   </div>
+ <div class="style-card">
+    <img src="images/ad33c7c54379f42c.jpeg" alt="Description of the image">
+    <p><strong>Straight back</strong></p>
+    <button class="button" onclick="selectStyle('Knotless Braids')">Select</button>
+  </div>
+ <div class="style-card">
+    <img src="images/cornflowers.webp" alt="Description of the image">
+    <p><strong>Cornflower</strong></p>
+    <button class="button" onclick="selectStyle('Knotless Braids')">Select</button>
+  </div>
+ <div class="style-card">
+    <img src="images\with beads.webp"" alt="Description of the image">
+    <p><strong>Cornflower with Beads</strong></p>
+    <button class="button" onclick="selectStyle('Knotless Braids')">Select</button>
+  </div>
+  
   <button class="button" onclick="showScreen('home',1)">Back</button>
 </div>
 
@@ -178,7 +196,10 @@ let selectedPrice = 0;
 
 const prices = {
   "Box Braids": { Short: 180, Medium: 220, Long: 260 },
-  "Knotless Braids": { Short: 200, Medium: 250, Long: 300 }
+  "Knotless Braids": { Short: 200, Medium: 250, Long: 300 },
+  "Straight back": { Short: 220, Medium: 280, Long: 320 },
+  "Cornflower": { Short: 240, Medium: 290, Long: 340 },
+  "Cornflower with Beads": { Short: 280, Medium: 310, Long: 380 }
 };
 
 // ----------------- FIREBASE -----------------
