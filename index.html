@@ -535,9 +535,9 @@ const TIME_PER_SLOT_MINUTES = 90; // 1.5 hours
   });
 }
 
-  // --- 1️⃣ Send simple booking request to studio ---
+// Send WhatsApp to ADMIN
 function sendWhatsAppToAdmin(booking) {
-  const adminPhone = "27794380103"; // 👈 YOUR WhatsApp number
+  const adminPhone = "27794380103";
 
   const message =
     "📢 NEW BOOKING RECEIVED\n\n" +
@@ -547,8 +547,7 @@ function sendWhatsAppToAdmin(booking) {
     `📏 Length: ${booking.length}\n` +
     `💰 Price: R${booking.price}\n` +
     `📅 Date: ${booking.date}\n` +
-    `🕒 Time: ${booking.time}\n\n` +
-    `Status: ${booking.status}`;
+    `🕒 Time: ${booking.time}`;
 
   window.open(
     `https://wa.me/${adminPhone}?text=${encodeURIComponent(message)}`,
@@ -556,6 +555,23 @@ function sendWhatsAppToAdmin(booking) {
   );
 }
 
+// Send WhatsApp to CLIENT
+function sendWhatsAppToClient(booking, intro = "") {
+  const phone = booking.clientPhone.replace(/\D/g, '');
+  const message =
+    `${intro}\nHello ${booking.clientName},\n` +
+    `Style: ${booking.style}\n` +
+    `Length: ${booking.length}\n` +
+    `Price: R${booking.price}\n` +
+    `Date: ${booking.date}\n` +
+    `Time: ${booking.time}\n` +
+    `Status: ${booking.status}`;
+
+  window.open(
+    `https://wa.me/${phone}?text=${encodeURIComponent(message)}`,
+    "_blank"
+  );
+}
 
 // Send SMS to client
 function sendSmsToClient(booking, messageIntro = "") {
@@ -655,11 +671,11 @@ function openAdmin() {
    const dailyRevenue = {};
 
       snapshot.forEach(doc => {
-        dailyRevenue[booking.date] =
-       (dailyRevenue[booking.date] || 0) + (booking.price || 0);
-
         const booking = doc.data();
         const id = doc.id;
+
+       dailyRevenue[booking.date] =
+       (dailyRevenue[booking.date] || 0) + (booking.price || 0);
 
         const hours = estimateToHours(booking.timeEstimate || "0");
         dailyTotals[booking.date] =
@@ -702,22 +718,6 @@ function openAdmin() {
         summary.appendChild(div);
       }
     });
-}
-
-function updateBookingStatus(id,status){
-  const bookingRef=db.collection("bookings").doc(id);
-  bookingRef.update({status:status}).then(()=>{
-    const latestBooking=JSON.parse(localStorage.getItem("latestBooking"));
-    if(latestBooking?.id===id){
-      latestBooking.status=status;
-      localStorage.setItem("latestBooking",JSON.stringify(latestBooking));
-      if(document.getElementById("confirmation").classList.contains("active"))
-        document.getElementById("cStatus").textContent=status;
-
-      if(latestBooking.method==="whatsapp") sendWhatsAppToClient(latestBooking,"📢 Booking Status Updated!");
-      else if(latestBooking.method==="sms") sendSmsToClient(latestBooking,"📢 Booking Status Updated!");
-    }
-  }).catch(err=>console.error(err));
 }
 
   function resetSubmitButtons() {
