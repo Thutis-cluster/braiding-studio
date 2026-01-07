@@ -399,6 +399,7 @@ function saveBookingToFirebase() {
 
   db.collection("bookings").add(booking)
     .then((docRef) => {
+      sendWhatsAppToAdmin(booking);
       console.log("Booking saved:", docRef.id);
       booking.id = docRef.id;
       localStorage.setItem("latestBooking", JSON.stringify(booking));
@@ -539,39 +540,26 @@ function sendWhatsAppBooking(booking, method) {
   if (method !== "whatsapp") return;
 
   // --- 1️⃣ Send simple booking request to studio ---
-  const studioPhone = "27663432248"; // studio number
-  const studioMessage =
-    "Hello Mumsy Braids Studio,%0A%0A" +
-    "I would like to book an appointment.%0A%0A" +
-    `Name: ${booking.clientName}%0A` +
-    `Style: ${booking.style}%0A` +
-    `Length: ${booking.length}%0A` +
-    `Date: ${booking.date}%0A` +
-    `Total Price: R${booking.price}%0A%0A` +
-    "Thank you.";
+function sendWhatsAppToAdmin(booking) {
+  const adminPhone = "27794380103"; // 👈 YOUR WhatsApp number
 
-  window.open(`https://wa.me/${studioPhone}?text=${studioMessage}`, "_blank");
+  const message =
+    "📢 NEW BOOKING RECEIVED\n\n" +
+    `👤 Name: ${booking.clientName}\n` +
+    `📞 Phone: ${booking.clientPhone}\n` +
+    `💇 Style: ${booking.style}\n` +
+    `📏 Length: ${booking.length}\n` +
+    `💰 Price: R${booking.price}\n` +
+    `📅 Date: ${booking.date}\n` +
+    `🕒 Time: ${booking.time}\n\n` +
+    `Status: ${booking.status}`;
 
-  // --- 2️⃣ Send full booking details to client ---
-  let clientPhone = booking.clientPhone.replace(/\D/g, '');
-  if (clientPhone.startsWith("0")) clientPhone = "27" + clientPhone.slice(1);
-
-  const clientMessage = `✅ Booking Confirmed!\n\nHi ${booking.clientName}, here are your booking details:\n\n` +
-                        `💇 Style: ${booking.style}\n` +
-                        `📏 Length: ${booking.length}\n` +
-                        `💰 Price: R${booking.price}\n` +
-                        `⏱ Estimated Time: ${booking.timeEstimate}\n` +
-                        `📅 Date: ${booking.date}\n` +
-                        `🕒 Time: ${booking.time}\n` +
-                        `✅ Status: ${booking.status}\n\n` +
-                        `🔹 Hair Prep: Wash & dry hair before appointment\n` +
-                        `🔹 Cancellation: 24h notice required`;
-
-  // Small delay to avoid browser blocking multiple windows
-  setTimeout(() => {
-window.open(`https://wa.me/${clientPhone}?text=${encodeURIComponent(clientMessage)}`, "_blank");
-  }, 500);
+  window.open(
+    `https://wa.me/${adminPhone}?text=${encodeURIComponent(message)}`,
+    "_blank"
+  );
 }
+
 
 // Send SMS to client
 function sendSmsToClient(booking, messageIntro = "") {
@@ -667,9 +655,13 @@ function openAdmin() {
       list.innerHTML = "";
       summary.innerHTML = "";
 
-      const dailyTotals = {};
+   const dailyTotals = {};
+   const dailyRevenue = {};
 
       snapshot.forEach(doc => {
+        dailyRevenue[booking.date] =
+       (dailyRevenue[booking.date] || 0) + (booking.price || 0);
+
         const booking = doc.data();
         const id = doc.id;
 
@@ -708,7 +700,8 @@ function openAdmin() {
         div.className = "style-card";
         div.innerHTML = `
           <strong>${date}</strong><br>
-          ⏱ Total Estimated Work: ${dailyTotals[date]} hours
+         ⏱ Work: ${dailyTotals[date]} hrs<br>
+         💰 Revenue: R${dailyRevenue[date]}
         `;
         summary.appendChild(div);
       }
