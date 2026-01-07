@@ -573,6 +573,19 @@ function sendWhatsAppToClient(booking, intro = "") {
   );
 }
 
+function sendWhatsAppBooking(booking, method) {
+  if (method !== "whatsapp") return;
+
+  // Notify admin
+  sendWhatsAppToAdmin(booking);
+
+  // Notify client
+  sendWhatsAppToClient(
+    booking,
+    "✅ Booking received! Your appointment is pending confirmation."
+  );
+}
+
 // Send SMS to client
 function sendSmsToClient(booking, messageIntro = "") {
   const phone = booking.clientPhone.replace(/\D/g, '');
