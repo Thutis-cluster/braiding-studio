@@ -157,8 +157,15 @@ body {
 <!-- Screens -->
 <div id="home" class="screen active">
   <h1>Mumsy Braids Studio</h1>
-  <button class="button" onclick="showScreen('styles',2)">Book Appointment</button>
-  <button class="button" onclick="openAdmin()">Owner Admin Panel</button>
+
+  <button class="button" onclick="showScreen('styles',2)">
+    Book Appointment
+  </button>
+
+  <!-- Admin button hidden by default -->
+  <button class="button" id="adminBtn" onclick="showScreen('adminLogin',1)" style="display:none;">
+    💼 Owner Admin Panel
+  </button>
 </div>
   
 <div id="styles" class="screen">
@@ -264,8 +271,20 @@ body {
   <button class="button" onclick="showScreen('home',1)">Done</button>
 </div>
 
-<div id="admin" class="screen">
+<div id="adminLogin" class="screen">
+  <h2>🔐 Owner Login</h2>
+
+  <input type="email" id="adminEmail" placeholder="Admin Email">
+  <input type="password" id="adminPassword" placeholder="Password">
+
+  <button class="button" onclick="adminLogin()">Login</button>
+  <button class="button" onclick="showScreen('home',1)">Back</button>
+
+  <p id="adminLoginError" class="error"></p>
+</div>
   
+<div id="admin" class="screen">
+  <button class="button decline" onclick="adminLogout()">🚪 Logout</button>
   <h2>💼 Owner Admin Panel</h2>
   <div id="bookingsList">
     <div id="dailySummary"></div>
@@ -336,7 +355,8 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 console.log("Firebase connected:", firebase.apps.length > 0);
-
+const auth = firebase.auth();
+  
 // ----------------- SELECT STYLE & LENGTH -----------------
 function selectStyle(style) {
   selectedStyle = style;
@@ -421,9 +441,7 @@ function validateClientForm() {
     btn.disabled = !(nameValid && phoneValid);
   });
 }
-
-  
-  
+ 
 function confirmBooking(method) {
   if (isSubmitting) return; // prevent double submissions
   isSubmitting = true;
@@ -592,8 +610,53 @@ function updateBookingStatus(id, status) {
     .catch(err => console.error(err));
 }
 
+function adminLogin() {
+  const email = document.getElementById("adminEmail").value;
+  const password = document.getElementById("adminPassword").value;
+  const errorEl = document.getElementById("adminLoginError");
+
+  errorEl.textContent = "";
+
+  auth.signInWithEmailAndPassword(email, password)
+    .then(() => {
+      showScreen("admin", 5);
+      openAdmin();
+    })
+    .catch(err => {
+      errorEl.textContent = "❌ Login failed: " + err.message;
+    });
+}
+
+auth.onAuthStateChanged(user => {
+  const adminBtn = document.getElementById("adminBtn");
+
+  if (user) {
+    // Admin logged in
+    adminBtn.style.display = "block";
+  } else {
+    // Logged out
+    adminBtn.style.display = "none";
+
+    if (document.getElementById("admin").classList.contains("active")) {
+      showScreen("home", 1);
+    }
+  }
+});
+
+function adminLogout() {
+  auth.signOut().then(() => {
+    showScreen("home", 1);
+  });
+}
+
 // ----------------- ADMIN PANEL -----------------
 function openAdmin() {
+    if (!auth.currentUser) {
+    alert("⛔ Access denied. Admins only.");
+    showScreen("home",1);
+    return;
+  }
+  
   showScreen("admin", 5); // move to admin screen
   const list = document.getElementById("bookingsList");
   const summary = document.getElementById("dailySummary");
