@@ -534,10 +534,6 @@ const TIME_PER_SLOT_MINUTES = 90; // 1.5 hours
     option.disabled = requiredMinutes > TIME_PER_SLOT_MINUTES;
   });
 }
-  
-// Send WhatsApp to studio
-function sendWhatsAppBooking(booking, method) {
-  if (method !== "whatsapp") return;
 
   // --- 1️⃣ Send simple booking request to studio ---
 function sendWhatsAppToAdmin(booking) {
