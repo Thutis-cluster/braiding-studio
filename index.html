@@ -89,6 +89,38 @@ body {
   border-radius: 8px;
 }
 
+.calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.calendar-day {
+  padding: 10px;
+  text-align: center;
+  border-radius: 6px;
+  cursor: pointer;
+  background: #fff;
+  border: 1px solid #e0d5cc;
+}
+
+.calendar-day:hover {
+  background: #f5b7a3;
+  color: white;
+}
+
+.calendar-day.disabled {
+  background: #eee;
+  color: #aaa;
+  cursor: not-allowed;
+}
+
+.calendar-day.selected {
+  background: #27AE60;
+  color: white;
+}
+  
   .error {
   color: #E74C3C;
   font-size: 13px;
@@ -130,8 +162,6 @@ body {
   background: #e6fff0;
   border-left: 5px solid #27AE60;
 }
-
-
 
 .booking-card.pending { border-left: 5px solid #F1C40F; background-color: #fff9e6; }
 .booking-card.accepted { border-left: 5px solid #27AE60; background-color: #e6fff0; }
@@ -215,11 +245,14 @@ body {
 
 <div id="date" class="screen">
   <h2>Date & Time</h2>
-  <input type="date" id="clientDate">
-  <select id="clientTime">
-    <option>08:00</option>
-    <option>10:30</option>
-    <option>13:00</option>
+<div id="calendar"></div>
+<input type="hidden" id="clientDate" onchange="handleDateSelection()" onchange="validateClientForm()">
+<select id="clientTime" onchange="validateClientForm()">
+  <option value="">Select time</option>
+  <option>08:00</option>
+  <option>10:30</option>
+  <option>13:00</option>
+</select>
   </select>
   <button class="button" onclick="showScreen('length',3)">Back</button>
   <button class="button" onclick="showScreen('client',4)">Next</button>
@@ -299,18 +332,26 @@ let selectedLength = "";
 let selectedPrice = 0;
 let selectedTimeEstimate = "";
 let isSubmitting = false;
-const WORK_START = 9;  // 09:00
+const WORK_START = 8;  // 08:00
 const WORK_END = 17;  // 17:00
+const MAX_WORK_HOURS_PER_DAY = 8;
 
   // ----------------- SCREEN NAVIGATION -----------------
 function showScreen(id, step) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
 
-  for (let i = 1; i <= 5; i++) document.getElementById('step'+i).classList.remove('active');
-  for (let i = 1; i <= step; i++) document.getElementById('step'+i).classList.add('active');
+  for (let i = 1; i <= 5; i++)
+    document.getElementById('step'+i).classList.remove('active');
+  for (let i = 1; i <= step; i++)
+    document.getElementById('step'+i).classList.add('active');
 
-  if(id === "confirmation") displayConfirmation();
+  if (id === "date") {
+    const now = new Date();
+    renderCalendar(now.getFullYear(), now.getMonth());
+  }
+
+  if (id === "confirmation") displayConfirmation();
 }
 
 function getHourFromTime(timeStr) {
@@ -382,6 +423,36 @@ function selectLength(length) {
   showScreen('date', 4);
 }
 
+  function handleDateSelection() {
+  const dateInput = document.getElementById("clientDate");
+  const selectedDate = dateInput.value;
+
+  if (!selectedDate) return;
+
+  // Fetch bookings for selected date
+  db.collection("bookings")
+    .where("date", "==", selectedDate)
+    .get()
+    .then(snapshot => {
+      let totalHours = 0;
+
+      snapshot.forEach(doc => {
+        const booking = doc.data();
+        const hours = estimateToHours(booking.timeEstimate || "0");
+        totalHours += hours;
+      });
+
+      if (totalHours >= MAX_WORK_HOURS_PER_DAY) {
+        alert("⛔ This day is fully booked. Please choose another date.");
+        dateInput.value = ""; // reset date
+        validateClientForm();
+      }
+    })
+    .catch(err => {
+      console.error("Date check failed:", err);
+    });
+}
+
 // ----------------- SAVE BOOKING -----------------
 function saveBookingToFirebase() {
   const booking = {
@@ -409,6 +480,64 @@ function saveBookingToFirebase() {
     .catch(err => alert("Error saving booking. Check Firestore rules: "+err));
 }
 
+  function renderCalendar(year, month) {
+  const calendar = document.getElementById("calendar");
+  calendar.innerHTML = "";
+  calendar.className = "calendar";
+
+  const today = new Date();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  // Fetch all bookings for the month
+  db.collection("bookings")
+    .where("date", ">=", `${year}-${String(month + 1).padStart(2, "0")}-01`)
+    .where("date", "<=", `${year}-${String(month + 1).padStart(2, "0")}-31`)
+    .get()
+    .then(snapshot => {
+      const hoursPerDay = {};
+
+      snapshot.forEach(doc => {
+        const b = doc.data();
+        const hours = estimateToHours(b.timeEstimate || "0");
+        hoursPerDay[b.date] = (hoursPerDay[b.date] || 0) + hours;
+      });
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+        const div = document.createElement("div");
+        div.textContent = day;
+        div.className = "calendar-day";
+
+        const bookedHours = hoursPerDay[dateStr] || 0;
+
+        // Disable past days
+        const dateObj = new Date(dateStr);
+        if (dateObj < today) {
+          div.classList.add("disabled");
+        }
+
+        // Disable fully booked days
+        if (bookedHours >= MAX_WORK_HOURS_PER_DAY) {
+          div.classList.add("disabled");
+        }
+
+        // Click handler
+        div.onclick = () => {
+          if (div.classList.contains("disabled")) return;
+
+          document.querySelectorAll(".calendar-day")
+            .forEach(d => d.classList.remove("selected"));
+
+          div.classList.add("selected");
+          document.getElementById("clientDate").value = dateStr;
+          validateClientForm();
+        };
+
+        calendar.appendChild(div);
+      }
+    });
+}
+
 // ----------------- DISPLAY CONFIRMATION -----------------
 function displayConfirmation() {
   const booking = JSON.parse(localStorage.getItem("latestBooking"));
@@ -428,18 +557,24 @@ function displayConfirmation() {
 function validateClientForm() {
   const nameInput = document.getElementById("clientName");
   const phoneInput = document.getElementById("clientPhone");
+  const dateInput = document.getElementById("clientDate");
+  const timeInput = document.getElementById("clientTime");
 
   const nameCheck = document.getElementById("nameCheck");
   const phoneCheck = document.getElementById("phoneCheck");
 
   const nameValid = nameInput.value.trim() !== "";
   const phoneValid = phoneInput.value.trim() !== "";
+  const dateValid = dateInput.value !== "";
+  const timeValid = timeInput.value !== "";
 
+  // ✔ checkmarks
   nameCheck.style.display = nameValid ? "block" : "none";
   phoneCheck.style.display = phoneValid ? "block" : "none";
 
+  // 🔘 enable / disable submit buttons
   document.querySelectorAll(".submit-btn").forEach(btn => {
-    btn.disabled = !(nameValid && phoneValid);
+    btn.disabled = !(nameValid && phoneValid && dateValid && timeValid);
   });
 }
  
