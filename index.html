@@ -699,7 +699,9 @@ function sendWhatsAppToClient(booking, intro = "") {
     `Price: R${booking.price}\n` +
     `Date: ${booking.date}\n` +
     `Time: ${booking.time}\n` +
-    `Status: ${booking.status}`;
+    `Status: ${booking.status}\n` +
+    `<p>Hair Prep: Wash & dry hair before appointment</p>\n` +
+   `<p>Cancellation: 24h notice required</p>`;
 
   window.open(
     `https://wa.me/${phone}?text=${encodeURIComponent(message)}`,
@@ -720,6 +722,21 @@ function sendWhatsAppBooking(booking, method) {
   );
 }
 
+  function sendSMS(phone, message) {
+    fetch("http://localhost:3000/sendSMS", { // Replace with your live server URL in production
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone, message })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) console.log("SMS sent!");
+        else console.error("SMS failed:", data.error);
+    })
+    .catch(err => console.error("Error sending SMS:", err));
+}
+
+
 // Send SMS to client
 function sendSmsToClient(booking, messageIntro = "") {
   const phone = booking.clientPhone.replace(/\D/g, '');
@@ -729,10 +746,51 @@ function sendSmsToClient(booking, messageIntro = "") {
                   `Price: R${booking.price}\n` +
                   `Date: ${booking.date}\n` +
                   `Time: ${booking.time}\n` +
-                  `Status: ${booking.status}`;
+                  `Status: ${booking.status}\n`
+                  `<p>Hair Prep: Wash & dry hair before appointment</p>\n` +
+                  `<p>Cancellation: 24h notice required</p>`;
 
   window.open(`sms:${phone}?body=${encodeURIComponent(message)}`, "_blank");
 }
+
+      // ----------------- REMINDERS -----------------
+function sendReminderIfDue(booking) {
+  // Only proceed if appointment exists and reminder hasn't been sent
+  if (!booking.date || !booking.time || booking.reminderSent) return;
+
+  // Construct appointment datetime
+  const [hour, minute] = booking.time.split(":").map(Number);
+  const appointmentDate = new Date(booking.date);
+  appointmentDate.setHours(hour, minute, 0, 0);
+
+  const now = new Date();
+  const diffHours = (appointmentDate - now) / 1000 / 60 / 60; // hours remaining
+
+  // Trigger reminder exactly 5 hours before
+  if (diffHours <= 5 && diffHours > 4.99) {
+    const message = `⏰ Reminder: Hi ${booking.clientName}, your appointment for ${booking.style} (${booking.length}) is in 5 hours at ${booking.time} on ${booking.date}.`;
+
+    // Use the same method the client chose
+    if (booking.method === "sms") {
+      sendSmsToClient(booking, message);
+    } else if (booking.method === "whatsapp") {
+      sendWhatsAppToClient(booking, message);
+    }
+
+    // Mark reminder sent
+    booking.reminderSent = true;
+
+    // Update in Firebase so it won't send again
+    if (booking.id) {
+      db.collection("bookings").doc(booking.id).update({ reminderSent: true })
+        .then(() => console.log("5-hour reminder sent and updated in Firestore"))
+        .catch(err => console.error("Error updating reminder status:", err));
+    } else {
+      console.log("5-hour reminder sent locally:", booking.clientName);
+    }
+  }
+}
+
 
 
 // ----------------- STATUS UPDATE -----------------
@@ -825,7 +883,6 @@ auth.onAuthStateChanged(user => {
     });
 });
 
-
 function adminLogout() {
   auth.signOut().then(() => {
     showScreen("home", 1);
@@ -913,6 +970,18 @@ function openAdmin() {
   });
 }
 
+// Periodically check for reminders every 5 minutes
+setInterval(() => {
+  db.collection("bookings").where("status", "==", "Accepted").get()
+    .then(snapshot => {
+      snapshot.forEach(doc => {
+        const booking = doc.data();
+        booking.id = doc.id;
+        sendReminderIfDue(booking);
+      });
+    });
+}, 5 * 60 * 1000); // every 5 minutes
+          
 </script>
 </body>
 </html>
