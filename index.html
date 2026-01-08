@@ -704,22 +704,24 @@ function sendWhatsAppToAdmin(booking) {
 
 // Send WhatsApp to CLIENT
 function sendWhatsAppToClient(booking, intro = "") {
-  const phone = booking.clientPhone.replace(/\D/g, '');
-  const message =
-    `${intro}\nHello ${booking.clientName},\n` +
-    `Style: ${booking.style}\n` +
-    `Length: ${booking.length}\n` +
-    `Price: R${booking.price}\n` +
-    `Date: ${booking.date}\n` +
-    `Time: ${booking.time}\n` +
-    `Status: ${booking.status}\n` +
-    `<p>Hair Prep: Wash & dry hair before appointment</p>\n` +
-   `<p>Cancellation: 24h notice required</p>`;
+    const formattedPhone = formatPhoneForWhatsApp(booking.clientPhone);
+    const message = `
+${intro}
+Hello ${booking.clientName},
+💇 Style: ${booking.style}
+📏 Length: ${booking.length}
+💰 Price: R${booking.price}
+📅 Date: ${booking.date}
+🕒 Time: ${booking.time}
+📌 Status: ${booking.status}
 
-  window.open(
-    `https://wa.me/${phone}?text=${encodeURIComponent(message)}`,
-    "_blank"
-  );
+Hair Prep: Wash & dry hair before appointment
+Cancellation: 24h notice required
+    `;
+    window.open(
+        `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`,
+        "_blank"
+    );
 }
 
 function sendWhatsAppBooking(booking, method) {
