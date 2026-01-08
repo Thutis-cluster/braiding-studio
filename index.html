@@ -791,8 +791,6 @@ function sendReminderIfDue(booking) {
   }
 }
 
-
-
 // ----------------- STATUS UPDATE -----------------
 function updateBookingStatus(id, status) {
   if (!auth.currentUser) {
@@ -800,28 +798,36 @@ function updateBookingStatus(id, status) {
     return;
   }
 
-  // 🔐 Verify admin role
   db.collection("admins").doc(auth.currentUser.uid).get()
     .then(doc => {
-      if (!doc.exists) {
+      if (!doc.exists || doc.data().role !== "admin") {
         alert("⛔ Not authorized");
-        return;
+        throw new Error("Not admin"); // prevent further execution
       }
 
-      const bookingRef = db.collection("bookings").doc(id);
-
-      return bookingRef.update({ status: status });
+      return db.collection("bookings").doc(id).get();
+    })
+    .then(doc => {
+      if (!doc.exists) throw new Error("Booking not found");
+      const booking = doc.data();
+      return db.collection("bookings").doc(id).update({ status });
     })
     .then(() => {
       console.log("Booking updated:", id, status);
 
-      // 🔔 WhatsApp alert to ADMIN (YOU)
-      sendAdminStatusAlert(id, status);
+      // Send WhatsApp/SMS to client
+      db.collection("bookings").doc(id).get().then(doc => {
+        const booking = doc.data();
+        booking.id = id;
+        booking.status = status;
+        if (booking.method === "sms") sendSmsToClient(booking, `✅ Your booking status is now: ${status}`);
+        else sendWhatsAppToClient(booking, `✅ Your booking status is now: ${status}`);
+      });
 
     })
     .catch(err => {
       console.error("Error updating booking:", err);
-      alert("❌ Permission denied");
+      if (err.message !== "Not admin") alert("❌ Permission denied");
     });
 }
 
