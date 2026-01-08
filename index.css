@@ -1,0 +1,86 @@
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #fdf6f0;
+      color: #4b3f36;
+    }
+
+    /* Progress bar */
+    .progress-container {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 20px;
+      background: #fff5f0;
+    }
+    .progress-step {
+      width: 20%;
+      height: 6px;
+      background: #e0d5cc;
+      border-radius: 3px;
+      transition: background 0.3s;
+    }
+    .progress-step.active {
+      background: #f5b7a3;
+    }
+
+    /* Screen styling */
+    .screen {
+      display: none;
+      padding: 20px;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+    .active {
+      display: block;
+    }
+
+    h1, h2 {
+      margin: 10px 0;
+    }
+
+    /* Buttons */
+    .button {
+      display: inline-block;
+      padding: 12px 20px;
+      margin: 10px 0;
+      background-color: #f5b7a3;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      text-align: center;
+      width: 100%;
+    }
+
+    /* Style Cards */
+    .style-card {
+      background: #fff0e6;
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .style-card img {
+      width: 100%;
+      border-radius: 6px;
+      margin-bottom: 8px;
+    }
+
+    /* Inputs */
+    input, select, textarea {
+      width: 100%;
+      padding: 10px;
+      margin: 6px 0;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+
+    .sticky {
+      position: fixed;
+      bottom: 10px;
+      left: 10px;
+      right: 10px;
+    }
