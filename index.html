@@ -507,7 +507,6 @@ function confirmBooking(method) {
       showScreen("confirmation", 5);
 
       // Send notification
-if (method === "whatsapp") sendWhatsAppBooking(booking, method);
       if (method === "sms") sendSmsToClient(booking, "✅ Booking Confirmed!");
     })
     .catch(err => {
@@ -603,35 +602,60 @@ function sendSmsToClient(booking, messageIntro = "") {
 
 // ----------------- STATUS UPDATE -----------------
 function updateBookingStatus(id, status) {
-  const bookingRef = db.collection("bookings").doc(id);
-  bookingRef.update({ status: status })
+  if (!auth.currentUser) {
+    alert("⛔ Admin only");
+    return;
+  }
+
+  // 🔐 Verify admin role
+  db.collection("admins").doc(auth.currentUser.uid).get()
+    .then(doc => {
+      if (!doc.exists) {
+        alert("⛔ Not authorized");
+        return;
+      }
+
+      const bookingRef = db.collection("bookings").doc(id);
+
+      return bookingRef.update({ status: status });
+    })
     .then(() => {
       console.log("Booking updated:", id, status);
-      const latestBooking = JSON.parse(localStorage.getItem("latestBooking"));
-      if(latestBooking?.id === id) {
-        latestBooking.status = status;
-        localStorage.setItem("latestBooking", JSON.stringify(latestBooking));
-        if(document.getElementById("confirmation").classList.contains("active"))
-          document.getElementById("cStatus").textContent = status;
 
-        if(latestBooking.method === "whatsapp") 
-          sendWhatsAppToClient(latestBooking, "Your booking status has been updated!");
-        else if(latestBooking.method === "sms")
-          sendSmsToClient(latestBooking, "Your booking status has been updated!");
-      }
+      // 🔔 WhatsApp alert to ADMIN (YOU)
+      sendAdminStatusAlert(id, status);
+
     })
-    .catch(err => console.error(err));
+    .catch(err => {
+      console.error("Error updating booking:", err);
+      alert("❌ Permission denied");
+    });
 }
 
 function adminLogin() {
-  const email = document.getElementById("adminEmail").value;
-  const password = document.getElementById("adminPassword").value;
+  const email = document.getElementById("adminEmail").value.trim();
+  const password = document.getElementById("adminPassword").value.trim();
   const errorEl = document.getElementById("adminLoginError");
 
   errorEl.textContent = "";
 
   auth.signInWithEmailAndPassword(email, password)
-    .then(() => {
+    .then(({ user }) => {
+
+      // 🔒 Check admin role in Firestore
+      return db.collection("admins").doc(user.uid).get();
+
+    })
+    .then(doc => {
+      if (!doc.exists || doc.data().role !== "admin") {
+        alert("⛔ Not authorized as admin");
+        auth.signOut();
+        showScreen("home", 1);
+        return;
+      }
+
+      // ✅ Authorized admin
+      document.getElementById("adminBtn").style.display = "block";
       showScreen("admin", 5);
       openAdmin();
     })
@@ -643,18 +667,29 @@ function adminLogin() {
 auth.onAuthStateChanged(user => {
   const adminBtn = document.getElementById("adminBtn");
 
-  if (user) {
-    // Admin logged in
-    adminBtn.style.display = "block";
-  } else {
-    // Logged out
+  if (!user) {
     adminBtn.style.display = "none";
-
-    if (document.getElementById("admin").classList.contains("active")) {
-      showScreen("home", 1);
-    }
+    return;
   }
+
+  // 🔒 Verify admin role
+  db.collection("admins").doc(user.uid).get()
+    .then(doc => {
+      if (doc.exists && doc.data().role === "admin") {
+        adminBtn.style.display = "block";
+      } else {
+        adminBtn.style.display = "none";
+        auth.signOut();
+        showScreen("home", 1);
+      }
+    })
+    .catch(() => {
+      adminBtn.style.display = "none";
+      auth.signOut();
+      showScreen("home", 1);
+    });
 });
+
 
 function adminLogout() {
   auth.signOut().then(() => {
