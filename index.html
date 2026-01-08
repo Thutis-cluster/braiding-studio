@@ -383,6 +383,19 @@ const times = {
   }
 };
 
+  function formatPhoneForWhatsApp(phone) {
+    let cleaned = phone.replace(/\D/g, ''); // remove non-digits
+
+    // If number starts with 0, replace with country code
+    if (cleaned.startsWith('0')) {
+        cleaned = '27' + cleaned.slice(1);
+    }
+    // Add + at the beginning
+    if (!cleaned.startsWith('27')) cleaned = '27' + cleaned;
+
+    return '+' + cleaned;
+}
+
 // ----------------- FIREBASE -----------------
 const firebaseConfig = {
   apiKey: "AIzaSyDYzO6pW5fjL6OhKrtELohjpzev8znveys",
