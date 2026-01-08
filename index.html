@@ -468,18 +468,20 @@ function selectLength(length) {
 
 // ----------------- SAVE BOOKING -----------------
 function saveBookingToFirebase() {
-  const booking = {
-    style: selectedStyle,
-    length: selectedLength,
-    price: selectedPrice,
-    clientName: document.getElementById("clientName").value,
-    clientPhone: document.getElementById("clientPhone").value,
-    clientEmail: document.getElementById("clientEmail").value,
-    date: document.getElementById("clientDate").value,
-    time: document.getElementById("clientTime").value,
-    status: "Pending",
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  };
+const booking = {
+  style: selectedStyle,
+  length: selectedLength,
+  price: selectedPrice,
+  timeEstimate: selectedTimeEstimate, // ← add this
+  clientName: document.getElementById("clientName").value,
+  clientPhone: document.getElementById("clientPhone").value,
+  clientEmail: document.getElementById("clientEmail").value,
+  date: document.getElementById("clientDate").value,
+  time: document.getElementById("clientTime").value,
+  status: "Pending",
+  createdAt: firebase.firestore.FieldValue.serverTimestamp()
+};
+
 
   db.collection("bookings").add(booking)
     .then((docRef) => {
@@ -754,19 +756,37 @@ function sendWhatsAppBooking(booking, method) {
 
 // Send SMS to client
 function sendSmsToClient(booking, messageIntro = "") {
+  // Clean the phone number (keep only digits)
   const phone = booking.clientPhone.replace(/\D/g, '');
+
+  // Construct the SMS message (plain text only)
   const message = `${messageIntro}\nHello ${booking.clientName},\nYour booking details:\n` +
                   `Style: ${booking.style}\n` +
                   `Length: ${booking.length}\n` +
                   `Price: R${booking.price}\n` +
                   `Date: ${booking.date}\n` +
                   `Time: ${booking.time}\n` +
-                  `Status: ${booking.status}\n`
-                  `<p>Hair Prep: Wash & dry hair before appointment</p>\n` +
-                  `<p>Cancellation: 24h notice required</p>`;
+                  `Status: ${booking.status}\n` +
+                  `Hair Prep: Wash & dry hair before appointment\n` +
+                  `Cancellation: 24h notice required`;
 
-  window.open(`sms:${phone}?body=${encodeURIComponent(message)}`, "_blank");
+  // Send request to your server to trigger Twilio SMS
+  fetch("http://localhost:3000/sendSMS", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ phone, message })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      console.log("SMS sent successfully!");
+    } else {
+      console.error("Failed to send SMS:", data.error);
+    }
+  })
+  .catch(err => console.error("Error sending SMS:", err));
 }
+
 
       // ----------------- REMINDERS -----------------
 function sendReminderIfDue(booking) {
@@ -835,8 +855,8 @@ function updateBookingStatus(id, status) {
         const booking = doc.data();
         booking.id = id;
         booking.status = status;
-        if (booking.method === "sms") sendSmsToClient(booking, `✅ Your booking status is now: ${status}`);
-        else sendWhatsAppToClient(booking, `✅ Your booking status is now: ${status}`);
+        if (booking.method === "sms") sendSmsToClient(booking, `✅ Your booking status is now: ${status}!!`);
+        else sendWhatsAppToClient(booking, `✅ Your booking status is now: ${status}!!`);
       });
 
     })
