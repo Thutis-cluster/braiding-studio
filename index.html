@@ -354,6 +354,21 @@ function showScreen(id, step) {
   if (id === "confirmation") displayConfirmation();
 }
 
+// ----------------- FIREBASE -----------------
+const firebaseConfig = {
+  apiKey: "AIzaSyDYzO6pW5fjL6OhKrtELohjpzev8znveys",
+  authDomain: "mumsy-braids-booking.firebaseapp.com",
+  projectId: "mumsy-braids-booking",
+  storageBucket: "mumsy-braids-booking.firebasestorage.app",
+  messagingSenderId: "494103742106",
+  appId: "1:494103742106:web:9b8f7cfd4430d045bec123",
+  measurementId: "G-090W6YHJ09"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+console.log("Firebase connected:", firebase.apps.length > 0);
+const auth = firebase.auth();
+
 function getHourFromTime(timeStr) {
   // "13:00" → 13
   return parseInt(timeStr.split(":")[0], 10);
@@ -382,8 +397,7 @@ const times = {
     Long: "1.2 – 1.4 hours"
   }
 };
-
-
+  
   function formatPhoneForWhatsApp(phone) {
     let cleaned = phone.replace(/\D/g, ''); // remove non-digits
 
@@ -397,21 +411,16 @@ const times = {
     return '+' + cleaned;
 }
 
-// ----------------- FIREBASE -----------------
-const firebaseConfig = {
-  apiKey: "AIzaSyDYzO6pW5fjL6OhKrtELohjpzev8znveys",
-  authDomain: "mumsy-braids-booking.firebaseapp.com",
-  projectId: "mumsy-braids-booking",
-  storageBucket: "mumsy-braids-booking.firebasestorage.app",
-  messagingSenderId: "494103742106",
-  appId: "1:494103742106:web:9b8f7cfd4430d045bec123",
-  measurementId: "G-090W6YHJ09"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-console.log("Firebase connected:", firebase.apps.length > 0);
-const auth = firebase.auth();
-  
+fetch("https://braiding-studio.onrender.com/sendSMS", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "x-api-key": "YOUR_API_KEY"
+  },
+  body: JSON.stringify({ phone, message })
+});
+
+    
 // ----------------- SELECT STYLE & LENGTH -----------------
 function selectStyle(style) {
   selectedStyle = style;
