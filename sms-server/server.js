@@ -2,6 +2,18 @@ import express from "express";
 import cors from "cors";
 import twilio from "twilio";
 
+const API_KEY = process.env.API_KEY;
+
+app.post("/sendSMS", async (req, res) => {
+  if (req.headers["x-api-key"] !== API_KEY) {
+    return res.status(403).json({ error: "Forbidden" });
+  }
+
+  const { phone, message } = req.body;
+  ...
+});
+
+
 const app = express();
 app.use(cors());
 app.use(express.json());
