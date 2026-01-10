@@ -1,1 +1,1036 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mumsy Braids Studio Booking</title>
 
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  background: #fdf6f0;
+  color: #4b3f36;
+}
+
+.progress-container {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  background: #fff5f0;
+}
+
+.progress-step {
+  width: 20%;
+  height: 6px;
+  background: #e0d5cc;
+  border-radius: 3px;
+}
+
+.progress-step.active {
+  background: #f5b7a3;
+}
+
+.screen {
+  display: none;
+  padding: 20px;
+}
+
+.screen.active {
+  display: block;
+}
+
+  /* Style cards image */
+.style-card img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+/* Make cards consistent */
+.style-card {
+  text-align: center;
+}
+
+/* Estimated time text */
+.time {
+  font-size: 14px;
+  color: #6b4f3f;
+  margin: 5px 0;
+}
+
+.button {
+  width: 100%;
+  padding: 12px;
+  background: #f5b7a3;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  margin: 10px 0;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.button:hover {
+  opacity: 0.9;
+}
+
+.style-card, .booking-card {
+  background: #fff0e6;
+  padding: 12px;
+  margin: 10px 0;
+  border-radius: 8px;
+}
+
+  #calendar {
+  min-height: 240px;
+}
+  
+.calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.calendar-day {
+  padding: 10px;
+  text-align: center;
+  border-radius: 6px;
+  cursor: pointer;
+  background: #fff;
+  border: 1px solid #e0d5cc;
+}
+
+.calendar-day:hover {
+  background: #f5b7a3;
+  color: white;
+}
+
+.calendar-day.disabled {
+  background: #eee;
+  color: #aaa;
+  cursor: not-allowed;
+}
+
+.calendar-day.selected {
+  background: #27AE60;
+  color: white;
+}
+  
+  .error {
+  color: #E74C3C;
+  font-size: 13px;
+  margin-bottom: 10px;
+  display: block;
+}
+
+  button:disabled {
+  background-color: #e0d5cc;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+  input:required {
+  border: 1px solid #f5b7a3;
+}
+
+  .input-group {
+  position: relative;
+  margin-bottom: 5px;
+}
+
+.input-group input {
+  width: 100%;
+  padding-right: 35px;
+}
+
+.checkmark {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #27AE60;
+  font-size: 18px;
+  display: none;
+}
+
+  #dailySummary .style-card {
+  background: #e6fff0;
+  border-left: 5px solid #27AE60;
+}
+
+.booking-card.pending { border-left: 5px solid #F1C40F; background-color: #fff9e6; }
+.booking-card.accepted { border-left: 5px solid #27AE60; background-color: #e6fff0; }
+.booking-card.declined { border-left: 5px solid #E74C3C; background-color: #ffe6e6; }
+
+.booking-card button { margin: 5px 5px 0 0; width: 48%; }
+.button.accept { background-color: #4CAF50; }
+.button.decline { background-color: #E74C3C; }
+</style>
+</head>
+
+<body>
+
+<!-- Progress -->
+<div class="progress-container">
+  <div id="step1" class="progress-step active"></div>
+  <div id="step2" class="progress-step"></div>
+  <div id="step3" class="progress-step"></div>
+  <div id="step4" class="progress-step"></div>
+  <div id="step5" class="progress-step"></div>
+</div>
+
+<!-- Screens -->
+<div id="home" class="screen active">
+  <h1>Mumsy Braids Studio</h1>
+
+  <button class="button" onclick="showScreen('styles',2)">
+    Book Appointment
+  </button>
+
+  <!-- Admin button hidden by default -->
+  <button class="button" id="adminBtn" onclick="showScreen('adminLogin',1)" style="display:block;">
+    💼 Owner Admin Panel
+  </button>
+</div>
+  
+<div id="styles" class="screen">
+  <h2>Select Style</h2>
+
+  <div class="style-card">
+    <img src="images/IMG-20251228-WA0010.jpg" alt="Box Braids">
+    <p><strong>Box Braids</strong></p>
+    <button class="button" onclick="selectStyle('Box Braids')">Select</button>
+  </div>
+
+  <div class="style-card">
+    <img src="images/IMG-20251228-WA0018.jpg" alt="Knotless Braids">
+    <p><strong>Knotless Braids</strong></p>
+    <button class="button" onclick="selectStyle('Knotless Braids')">Select</button>
+  </div>
+
+  <button class="button" onclick="showScreen('home',1)">Back</button>
+</div>
+  
+<div id="length" class="screen">
+  <h2>Select Length</h2>
+
+  <div class="style-card">
+    <p><strong>Short</strong></p>
+    <p>Price: R<span id="shortPrice"></span></p>
+    <p class="time">⏱ <span id="shortTime"></span></p>
+    <button class="button" onclick="selectLength('Short')">Choose</button>
+  </div>
+
+  <div class="style-card">
+    <p><strong>Medium</strong></p>
+    <p>Price: R<span id="mediumPrice"></span></p>
+    <p class="time">⏱ <span id="mediumTime"></span></p>
+    <button class="button" onclick="selectLength('Medium')">Choose</button>
+  </div>
+
+  <div class="style-card">
+    <p><strong>Long</strong></p>
+    <p>Price: R<span id="longPrice"></span></p>
+    <p class="time">⏱ <span id="longTime"></span></p>
+    <button class="button" onclick="selectLength('Long')">Choose</button>
+  </div>
+
+  <button class="button" onclick="showScreen('styles',2)">Back</button>
+</div>
+
+<div id="date" class="screen">
+  <h2>Date & Time</h2>
+<div id="calendar"></div>
+<input type="hidden" id="clientDate">
+<select id="clientTime" onchange="validateClientForm()">
+  <option value="">Select time</option>
+  <option>08:00</option>
+  <option>10:30</option>
+  <option>13:00</option>
+</select>
+  <button class="button" onclick="showScreen('length',3)">Back</button>
+  <button class="button" onclick="showScreen('client',4)">Next</button>
+</div>
+
+<div id="client" class="screen">
+  <h2>Your Details</h2>
+<div class="input-group">
+  <input id="clientName" placeholder="Full Name *" required oninput="validateClientForm()">
+  <span class="checkmark" id="nameCheck">✔</span>
+</div>
+<span class="error" id="nameError"></span>
+
+<div class="input-group">
+  <input id="clientPhone" placeholder="Phone *" required oninput="validateClientForm()">
+  <span class="checkmark" id="phoneCheck">✔</span>
+</div>
+<span class="error" id="phoneError"></span>
+
+<input type="email" id="clientEmail" placeholder="Email (Optional)">
+
+
+  <button class="button" onclick="showScreen('date',4)">Back</button>
+<button class="button submit-btn" onclick="confirmBooking('sms')">
+  ✅ Confirm Booking (SMS)
+</button>
+
+<button class="button submit-btn" onclick="confirmBooking('whatsapp')">
+  📱 Send Booking on WhatsApp
+</button>
+
+</div>
+
+<div id="confirmation" class="screen">
+  <h2>✅ Booking Confirmed</h2>
+  <p>Style: <span id="cStyle"></span></p>
+  <p>Length: <span id="cLength"></span></p>
+  <p>Estimated Time: <span id="cTimeEstimate"></span></p>
+  <p>Total: R<span id="cPrice"></span></p>
+  <p>Date: <span id="cDate"></span></p>
+  <p>Time: <span id="cTime"></span></p>
+  <p>Name: <span id="cName"></span></p>
+  <p>Phone: <span id="cPhone"></span></p>
+  <p>Email: <span id="cEmail"></span></p>
+  <p>Status: <span id="cStatus"></span></p>
+  <p>Hair Prep: Wash & dry hair before appointment</p>
+  <p>Cancellation: 24h notice required</p>
+  <button class="button" onclick="showScreen('client',5)">Back</button>
+  <button class="button" onclick="showScreen('home',1)">Done</button>
+</div>
+
+<div id="adminLogin" class="screen">
+  <h2>🔐 Owner Login</h2>
+
+  <input type="email" id="adminEmail" placeholder="Admin Email">
+  <input type="password" id="adminPassword" placeholder="Password">
+
+  <button class="button" onclick="adminLogin()">Login</button>
+  <button class="button" onclick="showScreen('home',1)">Back</button>
+
+  <p id="adminLoginError" class="error"></p>
+</div>
+  
+<div id="admin" class="screen">
+  <button class="button decline" onclick="adminLogout()">🚪 Logout</button>
+  <h2>💼 Owner Admin Panel</h2>
+  <div id="bookingsList">
+    <div id="dailySummary"></div>
+    <p>Loading bookings...</p>
+  </div>
+</div>
+
+<script>
+
+  // ----------------- FIREBASE -----------------
+  console.log("🔥 THIS IS THE SCRIPT RUNNING");
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDYzO6pW5fjL6OhKrtELohjpzev8znveys",
+  authDomain: "mumsy-braids-booking.firebaseapp.com",
+  projectId: "mumsy-braids-booking",
+  storageBucket: "mumsy-braids-booking.firebasestorage.app",
+  messagingSenderId: "494103742106",
+  appId: "1:494103742106:web:9b8f7cfd4430d045bec123",
+  measurementId: "G-090W6YHJ09"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+console.log("Firebase connected:", firebase.apps.length > 0);
+const auth = firebase.auth();
+
+  console.log("🔥 Firebase initialized");
+  
+// ----------------- VARIABLES -----------------
+let selectedStyle = "";
+let selectedLength = "";
+let selectedPrice = 0;
+let selectedTimeEstimate = "";
+let isSubmitting = false;
+const WORK_START = 8;  // 08:00
+const WORK_END = 17;  // 17:00
+const MAX_WORK_HOURS_PER_DAY = 8;
+
+  // ----------------- SCREEN NAVIGATION -----------------
+function showScreen(id, step) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+
+  for (let i = 1; i <= 5; i++)
+    document.getElementById('step'+i).classList.remove('active');
+  for (let i = 1; i <= step; i++)
+    document.getElementById('step'+i).classList.add('active');
+
+  if (id === "date") {
+    const now = new Date();
+    renderCalendar(now.getFullYear(), now.getMonth());
+  }
+
+  if (id === "confirmation") displayConfirmation();
+}
+
+function getHourFromTime(timeStr) {
+  // "13:00" → 13
+  return parseInt(timeStr.split(":")[0], 10);
+}
+
+  function estimateToHours(estimate) {
+  // "3 – 4 hours" → take MAX (4)
+  const numbers = estimate.match(/\d+(\.\d+)?/g);
+  return numbers ? Math.max(...numbers.map(Number)) : 0;
+}
+
+const prices = {
+  "Box Braids": { Short: 180, Medium: 220, Long: 260 },
+  "Knotless Braids": { Short: 200, Medium: 250, Long: 300 }
+};
+
+const times = {
+  "Box Braids": {
+    Short: "1 – 1.2 hours",
+    Medium: "1 – 1.3 hours",
+    Long: "1 – 1.4 hours"
+  },
+  "Knotless Braids": {
+    Short: "1.1 – 1.2 hours",
+    Medium: "1.2 – 1.2 hours",
+    Long: "1.2 – 1.4 hours"
+  }
+};
+  
+  function formatPhoneForWhatsApp(phone) {
+    let cleaned = phone.replace(/\D/g, ''); // remove non-digits
+
+    // If number starts with 0, replace with country code
+    if (cleaned.startsWith('0')) {
+        cleaned = '27' + cleaned.slice(1);
+    }
+    // Add + at the beginning
+    if (!cleaned.startsWith('27')) cleaned = '27' + cleaned;
+
+    return '+' + cleaned;
+}
+    
+// ----------------- SELECT STYLE & LENGTH -----------------
+function selectStyle(style) {
+  selectedStyle = style;
+
+  // Update price spans
+  document.getElementById('shortPrice').textContent = prices[style].Short;
+  document.getElementById('mediumPrice').textContent = prices[style].Medium;
+  document.getElementById('longPrice').textContent = prices[style].Long;
+
+  // Update time spans
+  document.getElementById('shortTime').textContent = times[style].Short;
+  document.getElementById('mediumTime').textContent = times[style].Medium;
+  document.getElementById('longTime').textContent = times[style].Long;
+
+  // Automatically show the length screen
+  showScreen('length', 3);
+}
+
+function selectLength(length) {
+  selectedLength = length;
+  selectedPrice = prices[selectedStyle][length];
+  selectedTimeEstimate = times[selectedStyle][length];
+  showScreen('date', 4);
+}
+
+  function handleDateSelection() {
+  const dateInput = document.getElementById("clientDate");
+  const selectedDate = dateInput.value;
+
+  if (!selectedDate) return;
+
+  // Fetch bookings for selected date
+  db.collection("bookings")
+    .where("date", "==", selectedDate)
+    .get()
+    .then(snapshot => {
+      let totalHours = 0;
+
+      snapshot.forEach(doc => {
+        const booking = doc.data();
+        const hours = estimateToHours(booking.timeEstimate || "0");
+        totalHours += hours;
+      });
+
+      if (totalHours >= MAX_WORK_HOURS_PER_DAY) {
+        alert("⛔ This day is fully booked. Please choose another date.");
+        dateInput.value = ""; // reset date
+        validateClientForm();
+      }
+    })
+    .catch(err => {
+      console.error("Date check failed:", err);
+    });
+}
+
+// ----------------- SAVE BOOKING -----------------
+function saveBookingToFirebase() {
+const booking = {
+  style: selectedStyle,
+  length: selectedLength,
+  price: selectedPrice,
+  timeEstimate: selectedTimeEstimate, // ← add this
+  clientName: document.getElementById("clientName").value,
+  clientPhone: document.getElementById("clientPhone").value,
+  clientEmail: document.getElementById("clientEmail").value,
+  date: document.getElementById("clientDate").value,
+  time: document.getElementById("clientTime").value,
+  status: "Pending",
+  createdAt: firebase.firestore.FieldValue.serverTimestamp()
+};
+
+
+  db.collection("bookings").add(booking)
+    .then((docRef) => {
+      sendWhatsAppToAdmin(booking);
+      console.log("Booking saved:", docRef.id);
+      booking.id = docRef.id;
+      localStorage.setItem("latestBooking", JSON.stringify(booking));
+      showScreen("confirmation",5);
+      sendWhatsAppToClient(booking, "Thank you for your booking! Your appointment is pending confirmation.");
+    })
+    .catch(err => alert("Error saving booking. Check Firestore rules: "+err));
+}
+
+  function renderCalendar(year, month) {
+  const calendar = document.getElementById("calendar");
+  calendar.innerHTML = "";
+  calendar.className = "calendar";
+
+  const today = new Date();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  // Fetch all bookings for the month
+  db.collection("bookings")
+    .where("date", ">=", `${year}-${String(month + 1).padStart(2, "0")}-01`)
+    .where("date", "<=", `${year}-${String(month + 1).padStart(2, "0")}-31`)
+    .get()
+    .then(snapshot => {
+      const hoursPerDay = {};
+
+      snapshot.forEach(doc => {
+        const b = doc.data();
+        const hours = estimateToHours(b.timeEstimate || "0");
+        hoursPerDay[b.date] = (hoursPerDay[b.date] || 0) + hours;
+      });
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+        const div = document.createElement("div");
+        div.textContent = day;
+        div.className = "calendar-day";
+
+        const bookedHours = hoursPerDay[dateStr] || 0;
+
+        // Disable past days
+        const dateObj = new Date(dateStr);
+        if (dateObj < today) {
+          div.classList.add("disabled");
+        }
+
+        // Disable fully booked days
+        if (bookedHours >= MAX_WORK_HOURS_PER_DAY) {
+          div.classList.add("disabled");
+        }
+
+        // Click handler
+        div.onclick = () => {
+          if (div.classList.contains("disabled")) return;
+
+          document.querySelectorAll(".calendar-day")
+            .forEach(d => d.classList.remove("selected"));
+
+          div.classList.add("selected");
+          document.getElementById("clientDate").value = dateStr;
+          validateClientForm();
+        };
+
+        calendar.appendChild(div);
+      }
+    });
+}
+
+// ----------------- DISPLAY CONFIRMATION -----------------
+function displayConfirmation() {
+  const booking = JSON.parse(localStorage.getItem("latestBooking"));
+  if(!booking) return;
+  document.getElementById("cStyle").textContent = booking.style;
+  document.getElementById("cLength").textContent = booking.length;
+  document.getElementById("cPrice").textContent = booking.price;
+  document.getElementById("cTimeEstimate").textContent = booking.timeEstimate;
+  document.getElementById("cDate").textContent = booking.date;
+  document.getElementById("cTime").textContent = booking.time;
+  document.getElementById("cName").textContent = booking.clientName;
+  document.getElementById("cPhone").textContent = booking.clientPhone;
+  document.getElementById("cEmail").textContent = booking.clientEmail;
+  document.getElementById("cStatus").textContent = booking.status;
+}
+
+function validateClientForm() {
+  const nameInput = document.getElementById("clientName");
+  const phoneInput = document.getElementById("clientPhone");
+  const dateInput = document.getElementById("clientDate");
+  const timeInput = document.getElementById("clientTime");
+
+  const nameCheck = document.getElementById("nameCheck");
+  const phoneCheck = document.getElementById("phoneCheck");
+
+  const nameValid = nameInput.value.trim() !== "";
+  const phoneValid = phoneInput.value.trim() !== "";
+  const dateValid = dateInput.value !== "";
+  const timeValid = timeInput.value !== "";
+
+  // ✔ checkmarks
+  nameCheck.style.display = nameValid ? "block" : "none";
+  phoneCheck.style.display = phoneValid ? "block" : "none";
+
+  // 🔘 enable / disable submit buttons
+  document.querySelectorAll(".submit-btn").forEach(btn => {
+    btn.disabled = !(nameValid && phoneValid && dateValid && timeValid);
+  });
+}
+ 
+function confirmBooking(method) {
+  if (isSubmitting) return; // prevent double submissions
+  isSubmitting = true;
+
+  // disable all submit buttons while processing
+  document.querySelectorAll(".submit-btn").forEach(btn => {
+    btn.disabled = true;
+    btn.textContent = "⏳ Submitting...";
+  });
+
+  // --- Get client details safely ---
+  const clientName = document.getElementById("clientName").value.trim();
+  const clientPhone = document.getElementById("clientPhone").value.trim();
+  const clientEmail = document.getElementById("clientEmail").value.trim();
+  const clientDate = document.getElementById("clientDate").value;
+  const clientTime = document.getElementById("clientTime").value;
+
+  // --- Validate required fields ---
+  if (!clientName || !clientPhone) {
+    alert("⚠️ Please fill in your Name and Phone.");
+    resetSubmitButtons();
+    return;
+  }
+
+  // --- Check working hours ---
+  const selectedHour = getHourFromTime(clientTime);
+  if (selectedHour < WORK_START || selectedHour >= WORK_END) {
+    alert("⛔ Bookings are only available between 09:00 and 17:00.");
+    resetSubmitButtons();
+    return;
+  }
+
+  // --- Check if style duration fits the time slot ---
+  const requiredMinutes = getMinutesFromEstimate(selectedTimeEstimate);
+  if (requiredMinutes > TIME_PER_SLOT_MINUTES) {
+    alert(`⛔ This style requires about ${selectedTimeEstimate}, which exceeds the available slot.`);
+    resetSubmitButtons();
+    return;
+  }
+
+  // --- Create booking object ---
+  const booking = {
+    style: selectedStyle,
+    length: selectedLength,
+    timeEstimate: selectedTimeEstimate,
+    price: selectedPrice,
+    clientName,
+    clientPhone,
+    clientEmail,
+    date: clientDate,
+    time: clientTime,
+    status: "Pending",
+    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    method
+  };
+
+  // --- Save booking to Firebase ---
+  db.collection("bookings").add(booking)
+    .then(docRef => {
+      booking.id = docRef.id;
+      localStorage.setItem("latestBooking", JSON.stringify(booking));
+      showScreen("confirmation", 5);
+
+      // Send notification
+      if (method === "sms") sendSmsToClient(booking, "✅ Booking Confirmed!");
+    })
+    .catch(err => {
+      alert("❌ Error saving booking: " + err);
+      resetSubmitButtons();
+    });
+}
+
+function getMinutesFromEstimate(estimate) {
+  // Example: "3 – 4 hours" → take MAX value
+  const numbers = estimate.match(/\d+(\.\d+)?/g);
+  if (!numbers) return 0;
+  const maxHours = Math.max(...numbers.map(Number));
+  return maxHours * 60;
+}
+
+const TIME_PER_SLOT_MINUTES = 90; // 1.5 hours
+
+  function updateAvailableTimes() {
+  const select = document.getElementById("clientTime");
+  const requiredMinutes = getMinutesFromEstimate(selectedTimeEstimate);
+
+  Array.from(select.options).forEach(option => {
+    option.disabled = requiredMinutes > TIME_PER_SLOT_MINUTES;
+  });
+}
+
+// Send WhatsApp to ADMIN
+function sendWhatsAppToAdmin(booking) {
+  const adminPhone = "27794380103";
+
+  const message =
+    "📢 NEW BOOKING RECEIVED\n\n" +
+    `👤 Name: ${booking.clientName}\n` +
+    `📞 Phone: ${booking.clientPhone}\n` +
+    `💇 Style: ${booking.style}\n` +
+    `📏 Length: ${booking.length}\n` +
+    `💰 Price: R${booking.price}\n` +
+    `📅 Date: ${booking.date}\n` +
+    `🕒 Time: ${booking.time}`;
+
+  window.open(
+    `https://wa.me/${adminPhone}?text=${encodeURIComponent(message)}`,
+    "_blank"
+  );
+}
+
+// Send WhatsApp to CLIENT
+function sendWhatsAppToClient(booking, intro = "") {
+    const formattedPhone = formatPhoneForWhatsApp(booking.clientPhone);
+    const message = `
+${intro}
+Hello ${booking.clientName},
+💇 Style: ${booking.style}
+📏 Length: ${booking.length}
+💰 Price: R${booking.price}
+📅 Date: ${booking.date}
+🕒 Time: ${booking.time}
+📌 Status: ${booking.status}
+
+Hair Prep: Wash & dry hair before appointment
+Cancellation: 24h notice required
+    `;
+    window.open(
+        `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`,
+        "_blank"
+    );
+}
+
+function sendWhatsAppBooking(booking, method) {
+  if (method !== "whatsapp") return;
+
+  // Notify admin
+  sendWhatsAppToAdmin(booking);
+
+  // Notify client
+  sendWhatsAppToClient(
+    booking,
+    "✅ Booking received! Your appointment is pending confirmation."
+  );
+}
+
+  function sendSMS(phone, message) {
+    fetch("http://localhost:3000/sendSMS", { // Replace with your live server URL in production
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone, message })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) console.log("SMS sent!");
+        else console.error("SMS failed:", data.error);
+    })
+    .catch(err => console.error("Error sending SMS:", err));
+}
+
+
+// Send SMS to client
+function sendSmsToClient(booking, messageIntro = "") {
+  // Clean the phone number (keep only digits)
+  const phone = booking.clientPhone.replace(/\D/g, '');
+
+  // Construct the SMS message (plain text only)
+  const message = `${messageIntro}\nHello ${booking.clientName},\nYour booking details:\n` +
+                  `Style: ${booking.style}\n` +
+                  `Length: ${booking.length}\n` +
+                  `Price: R${booking.price}\n` +
+                  `Date: ${booking.date}\n` +
+                  `Time: ${booking.time}\n` +
+                  `Status: ${booking.status}\n` +
+                  `Hair Prep: Wash & dry hair before appointment\n` +
+                  `Cancellation: 24h notice required`;
+
+  // Send request to your server to trigger Twilio SMS
+  fetch("http://localhost:3000/sendSMS", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ phone, message })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      console.log("SMS sent successfully!");
+    } else {
+      console.error("Failed to send SMS:", data.error);
+    }
+  })
+  .catch(err => console.error("Error sending SMS:", err));
+}
+
+
+      // ----------------- REMINDERS -----------------
+function sendReminderIfDue(booking) {
+  // Only proceed if appointment exists and reminder hasn't been sent
+  if (!booking.date || !booking.time || booking.reminderSent) return;
+
+  // Construct appointment datetime
+  const [hour, minute] = booking.time.split(":").map(Number);
+  const appointmentDate = new Date(booking.date);
+  appointmentDate.setHours(hour, minute, 0, 0);
+
+  const now = new Date();
+  const diffHours = (appointmentDate - now) / 1000 / 60 / 60; // hours remaining
+
+  // Trigger reminder exactly 5 hours before
+  if (diffHours <= 5 && diffHours > 4.99) {
+    const message = `⏰ Reminder: Hi ${booking.clientName}, your appointment for ${booking.style} (${booking.length}) is in 5 hours at ${booking.time} on ${booking.date}.`;
+
+    // Use the same method the client chose
+    if (booking.method === "sms") {
+      sendSmsToClient(booking, message);
+    } else if (booking.method === "whatsapp") {
+      sendWhatsAppToClient(booking, message);
+    }
+
+    // Mark reminder sent
+    booking.reminderSent = true;
+
+    // Update in Firebase so it won't send again
+    if (booking.id) {
+      db.collection("bookings").doc(booking.id).update({ reminderSent: true })
+        .then(() => console.log("5-hour reminder sent and updated in Firestore"))
+        .catch(err => console.error("Error updating reminder status:", err));
+    } else {
+      console.log("5-hour reminder sent locally:", booking.clientName);
+    }
+  }
+}
+
+// ----------------- STATUS UPDATE -----------------
+function updateBookingStatus(id, status) {
+  if (!auth.currentUser) {
+    alert("⛔ Admin only");
+    return;
+  }
+
+  db.collection("admins").doc(auth.currentUser.uid).get()
+    .then(doc => {
+      if (!doc.exists || doc.data().role !== "admin") {
+        alert("⛔ Not authorized");
+        throw new Error("Not admin"); // prevent further execution
+      }
+
+      return db.collection("bookings").doc(id).get();
+    })
+    .then(doc => {
+      if (!doc.exists) throw new Error("Booking not found");
+      const booking = doc.data();
+      return db.collection("bookings").doc(id).update({ status });
+    })
+    .then(() => {
+      console.log("Booking updated:", id, status);
+
+      // Send WhatsApp/SMS to client
+      db.collection("bookings").doc(id).get().then(doc => {
+        const booking = doc.data();
+        booking.id = id;
+        booking.status = status;
+        if (booking.method === "sms") sendSmsToClient(booking, `✅ Your booking status is now: ${status}!!`);
+        else sendWhatsAppToClient(booking, `✅ Your booking status is now: ${status}!!`);
+      });
+
+    })
+    .catch(err => {
+      console.error("Error updating booking:", err);
+      if (err.message !== "Not admin") alert("❌ Permission denied");
+    });
+}
+
+function adminLogin() {
+  const email = document.getElementById("adminEmail").value.trim();
+  const password = document.getElementById("adminPassword").value.trim();
+  const errorEl = document.getElementById("adminLoginError");
+
+  errorEl.textContent = "";
+
+  auth.signInWithEmailAndPassword(email, password)
+    .then(({ user }) => {
+
+      // 🔒 Check admin role in Firestore
+      return db.collection("admins").doc(user.uid).get();
+
+    })
+    .then(doc => {
+      if (!doc.exists || doc.data().role !== "admin") {
+        alert("⛔ Not authorized as admin");
+        auth.signOut();
+        showScreen("home", 1);
+        return;
+      }
+
+      // ✅ Authorized admin
+      document.getElementById("adminBtn").style.display = "block";
+      showScreen("admin", 5);
+      openAdmin();
+    })
+    .catch(err => {
+      errorEl.textContent = "❌ Login failed: " + err.message;
+    });
+}
+
+auth.onAuthStateChanged(user => {
+  const adminBtn = document.getElementById("adminBtn");
+
+  if (!user) {
+    adminBtn.style.display = "none";
+    return;
+  }
+
+  // 🔒 Verify admin role
+  db.collection("admins").doc(user.uid).get()
+    .then(doc => {
+      if (doc.exists && doc.data().role === "admin") {
+        adminBtn.style.display = "block";
+      } else {
+        adminBtn.style.display = "none";
+        auth.signOut();
+        showScreen("home", 1);
+      }
+    })
+    .catch(() => {
+      adminBtn.style.display = "none";
+      auth.signOut();
+      showScreen("home", 1);
+    });
+});
+
+function adminLogout() {
+  auth.signOut().then(() => {
+    showScreen("home", 1);
+  });
+}
+
+// ----------------- ADMIN PANEL -----------------
+function openAdmin() {
+    if (!auth.currentUser) {
+    alert("⛔ Access denied. Admins only.");
+    showScreen("home",1);
+    return;
+  }
+  
+  showScreen("admin", 5); // move to admin screen
+  const list = document.getElementById("bookingsList");
+  const summary = document.getElementById("dailySummary");
+
+  db.collection("bookings")
+    .orderBy("createdAt", "desc")
+    .onSnapshot(snapshot => {
+      list.innerHTML = "";
+      summary.innerHTML = "";
+
+   const dailyTotals = {};
+   const dailyRevenue = {};
+
+      snapshot.forEach(doc => {
+        const booking = doc.data();
+        const id = doc.id;
+
+       dailyRevenue[booking.date] =
+       (dailyRevenue[booking.date] || 0) + (booking.price || 0);
+
+        const hours = estimateToHours(booking.timeEstimate || "0");
+        dailyTotals[booking.date] =
+          (dailyTotals[booking.date] || 0) + hours;
+
+        const statusClass =
+          booking.status === "Pending" ? "pending" :
+          booking.status === "Accepted" ? "accepted" : "declined";
+
+        const card = document.createElement("div");
+        card.className = `booking-card ${statusClass}`;
+        card.innerHTML = `
+          <p><strong>${booking.clientName}</strong></p>
+          <p>${booking.style} – ${booking.length}</p>
+          <p>⏱ ${booking.timeEstimate}</p>
+          <p>${booking.date} @ ${booking.time}</p>
+          <p>Status: ${booking.status}</p>
+
+          <button class="button accept"
+            onclick="updateBookingStatus('${id}','Accepted')">
+            Accept
+          </button>
+
+          <button class="button decline"
+            onclick="updateBookingStatus('${id}','Declined')">
+            Decline
+          </button>
+        `;
+        list.appendChild(card);
+      });
+
+      for (const date in dailyTotals) {
+        const div = document.createElement("div");
+        div.className = "style-card";
+        div.innerHTML = `
+          <strong>${date}</strong><br>
+         ⏱ Work: ${dailyTotals[date]} hrs<br>
+         💰 Revenue: R${dailyRevenue[date]}
+        `;
+        summary.appendChild(div);
+      }
+    });
+}
+
+  function resetSubmitButtons() {
+  isSubmitting = false;
+  document.querySelectorAll(".submit-btn").forEach(btn => {
+    btn.disabled = false;
+    btn.textContent = btn.textContent.includes("SMS")
+      ? "✅ Confirm Booking (SMS)"
+      : "📱 Send Booking on WhatsApp";
+  });
+}
+
+// Periodically check for reminders every 5 minutes
+setInterval(() => {
+  db.collection("bookings").where("status", "==", "Accepted").get()
+    .then(snapshot => {
+      snapshot.forEach(doc => {
+        const booking = doc.data();
+        booking.id = doc.id;
+        sendReminderIfDue(booking);
+      });
+    });
+}, 5 * 60 * 1000); // every 5 minutes
+          
+</script>
+</body>
+</html>
