@@ -409,18 +409,6 @@ const times = {
 
     return '+' + cleaned;
 }
-
-function sendAdminTestSMS(phone, message) {
-  fetch("https://braiding-studio.onrender.com/sendSMS", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": "YOUR_API_KEY"
-    },
-    body: JSON.stringify({ phone, message })
-  });
-}
-;
     
 // ----------------- SELECT STYLE & LENGTH -----------------
 function selectStyle(style) {
