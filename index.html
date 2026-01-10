@@ -253,7 +253,6 @@ body {
   <option>10:30</option>
   <option>13:00</option>
 </select>
-  </select>
   <button class="button" onclick="showScreen('length',3)">Back</button>
   <button class="button" onclick="showScreen('client',4)">Next</button>
 </div>
@@ -411,15 +410,17 @@ const times = {
     return '+' + cleaned;
 }
 
-fetch("https://braiding-studio.onrender.com/sendSMS", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    "x-api-key": "YOUR_API_KEY"
-  },
-  body: JSON.stringify({ phone, message })
-});
-
+function sendAdminTestSMS(phone, message) {
+  fetch("https://braiding-studio.onrender.com/sendSMS", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": "YOUR_API_KEY"
+    },
+    body: JSON.stringify({ phone, message })
+  });
+}
+;
     
 // ----------------- SELECT STYLE & LENGTH -----------------
 function selectStyle(style) {
