@@ -89,6 +89,10 @@ body {
   border-radius: 8px;
 }
 
+  #calendar {
+  min-height: 240px;
+}
+  
 .calendar {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -246,7 +250,7 @@ body {
 <div id="date" class="screen">
   <h2>Date & Time</h2>
 <div id="calendar"></div>
-<input type="hidden" id="clientDate" onchange="handleDateSelection()" onchange="validateClientForm()">
+<input type="hidden" id="clientDate">
 <select id="clientTime" onchange="validateClientForm()">
   <option value="">Select time</option>
   <option>08:00</option>
@@ -325,6 +329,24 @@ body {
 </div>
 
 <script>
+
+  // ----------------- FIREBASE -----------------
+const firebaseConfig = {
+  apiKey: "AIzaSyDYzO6pW5fjL6OhKrtELohjpzev8znveys",
+  authDomain: "mumsy-braids-booking.firebaseapp.com",
+  projectId: "mumsy-braids-booking",
+  storageBucket: "mumsy-braids-booking.firebasestorage.app",
+  messagingSenderId: "494103742106",
+  appId: "1:494103742106:web:9b8f7cfd4430d045bec123",
+  measurementId: "G-090W6YHJ09"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+console.log("Firebase connected:", firebase.apps.length > 0);
+const auth = firebase.auth();
+
+  console.log("🔥 Firebase initialized");
+  
 // ----------------- VARIABLES -----------------
 let selectedStyle = "";
 let selectedLength = "";
@@ -352,21 +374,6 @@ function showScreen(id, step) {
 
   if (id === "confirmation") displayConfirmation();
 }
-
-// ----------------- FIREBASE -----------------
-const firebaseConfig = {
-  apiKey: "AIzaSyDYzO6pW5fjL6OhKrtELohjpzev8znveys",
-  authDomain: "mumsy-braids-booking.firebaseapp.com",
-  projectId: "mumsy-braids-booking",
-  storageBucket: "mumsy-braids-booking.firebasestorage.app",
-  messagingSenderId: "494103742106",
-  appId: "1:494103742106:web:9b8f7cfd4430d045bec123",
-  measurementId: "G-090W6YHJ09"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-console.log("Firebase connected:", firebase.apps.length > 0);
-const auth = firebase.auth();
 
 function getHourFromTime(timeStr) {
   // "13:00" → 13
