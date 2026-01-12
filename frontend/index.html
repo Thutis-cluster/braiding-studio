@@ -1010,8 +1010,12 @@ function sendReminderIfDue(booking) {
   const now = new Date();
   const diffHours = (appointmentDate - now) / 1000 / 60 / 60; // hours remaining
 
+  reminderAt: firebase.firestore.Timestamp.fromDate(
+  new Date(appointmentDate.getTime() - 5 * 60 * 60 * 1000)
+)
+  
   // Trigger reminder exactly 5 hours before
-  if (diffHours <= 5 && diffHours > 4.99) {
+  if (diffHours <= 5 && diffHours > 4 && !booking.reminderSent) {
     const message = `⏰ Reminder: Hi ${booking.clientName}, your appointment for ${booking.style} (${booking.length}) is in 5 hours at ${booking.time} on ${booking.date}.`;
 
     // Use the same method the client chose
@@ -1073,6 +1077,23 @@ function updateBookingStatus(id, status) {
       console.error("Error updating booking:", err);
       if (err.message !== "Not admin") alert("❌ Permission denied");
     });
+
+  .then(() => {
+  if (status === "Accepted") {
+    const [hour, minute] = booking.time.split(":").map(Number);
+    const appointmentDate = new Date(booking.date);
+    appointmentDate.setHours(hour, minute, 0, 0);
+
+    const reminderAt = new Date(
+      appointmentDate.getTime() - 5 * 60 * 60 * 1000
+    );
+
+    return db.collection("bookings").doc(id).update({
+      reminderAt: firebase.firestore.Timestamp.fromDate(reminderAt),
+      reminderSent: false
+    });
+  }
+})
 }
 
 function adminLogin() {
