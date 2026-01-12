@@ -97,7 +97,18 @@ body {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 6px;
-  margin-top: 10px;
+  transition: transform 0.35s ease, opacity 0.35s ease;
+  will-change: transform;
+}
+
+.calendar.slide-left {
+  transform: translateX(-30%);
+  opacity: 0;
+}
+
+.calendar.slide-right {
+  transform: translateX(30%);
+  opacity: 0;
 }
 
 .calendar h3 {
@@ -364,6 +375,7 @@ let selectedStyle = "";
 let selectedLength = "";
 let selectedPrice = 0;
 let selectedTimeEstimate = "";
+let ADMIN_CLOSED_DAYS = {};
 let isSubmitting = false;
   let currentYear;
 let currentMonth; // 0–11
@@ -395,6 +407,17 @@ function showScreen(id, step) {
     document.getElementById('step'+i).classList.remove('active');
   for (let i = 1; i <= step; i++)
     document.getElementById('step'+i).classList.add('active');
+
+  if (id === "date") {
+  const now = new Date();
+  currentYear = now.getFullYear();
+  currentMonth = now.getMonth();
+
+  loadAdminClosedDays(currentYear);
+  renderCalendar(currentYear, currentMonth);
+
+  setTimeout(enableCalendarSwipe, 100);
+}
 
 if (id === "date") {
   const now = new Date();
@@ -542,19 +565,25 @@ const booking = {
 }
 
 function changeMonth(direction) {
-  currentMonth += direction;
+  const calendar = document.getElementById("calendar");
 
-  if (currentMonth < 0) {
-    currentMonth = 11;
-    currentYear--;
-  }
+  calendar.classList.add(direction > 0 ? "slide-left" : "slide-right");
 
-  if (currentMonth > 11) {
-    currentMonth = 0;
-    currentYear++;
-  }
+  setTimeout(() => {
+    currentMonth += direction;
 
-  renderCalendar(currentYear, currentMonth);
+    if (currentMonth < 0) {
+      currentMonth = 11;
+      currentYear--;
+    }
+    if (currentMonth > 11) {
+      currentMonth = 0;
+      currentYear++;
+    }
+
+    calendar.classList.remove("slide-left", "slide-right");
+    renderCalendar(currentYear, currentMonth);
+  }, 300);
 }
 
   function enableCalendarSwipe() {
@@ -582,22 +611,21 @@ function changeMonth(direction) {
   });
 }
 
-  function getSouthAfricanHolidays(year) {
-  return [
-    `${year}-01-01`, // New Year's Day
-    `${year}-03-21`, // Human Rights Day
-    `${year}-04-27`, // Freedom Day
-    `${year}-05-01`, // Workers' Day
-    `${year}-06-16`, // Youth Day
-    `${year}-08-09`, // National Women's Day
-    `${year}-09-24`, // Heritage Day
-    `${year}-12-16`, // Day of Reconciliation
-    `${year}-12-25`, // Christmas Day
+function getSouthAfricanHolidays(year) {
+  return {
+    [`${year}-01-01`]: "New Year's Day",
+    [`${year}-03-21`]: "Human Rights Day",
+    [`${year}-04-27`]: "Freedom Day",
+    [`${year}-05-01`]: "Workers' Day",
+    [`${year}-06-16`]: "Youth Day",
+    [`${year}-08-09`]: "National Women's Day",
+    [`${year}-09-24`]: "Heritage Day",
+    [`${year}-12-16`]: "Day of Reconciliation",
+    [`${year}-12-25`]: "Christmas Day",
 
-    // Movable (approx – safe defaults)
-    getGoodFriday(year),
-    getFamilyDay(year)
-  ];
+    [getGoodFriday(year)]: "Good Friday",
+    [getFamilyDay(year)]: "Family Day"
+  };
 }
 
   function getGoodFriday(year) {
@@ -631,7 +659,18 @@ function getFamilyDay(year) {
 }
 
  function renderCalendar(year, month) {
-   const PUBLIC_HOLIDAYS = getSouthAfricanHolidays(year);
+if (HOLIDAYS[dateStr]) {
+  div.classList.add("disabled");
+  div.title = `Public Holiday: ${HOLIDAYS[dateStr]}`;
+  div.style.background = "#ffe6e6";
+}
+
+   if (ADMIN_CLOSED_DAYS[dateStr]) {
+  div.classList.add("disabled");
+  div.title = `Closed: ${ADMIN_CLOSED_DAYS[dateStr]}`;
+  div.style.background = "#eee";
+}
+
   const calendar = document.getElementById("calendar");
   const title = document.getElementById("calendarTitle");
 
@@ -707,6 +746,21 @@ function getFamilyDay(year) {
   }
 }
 
+function loadAdminClosedDays(year) {
+  ADMIN_CLOSED_DAYS = {};
+
+  db.collection("closedDays")
+    .where("date", ">=", `${year}-01-01`)
+    .where("date", "<=", `${year}-12-31`)
+    .get()
+    .then(snapshot => {
+      snapshot.forEach(doc => {
+        const d = doc.data();
+        ADMIN_CLOSED_DAYS[d.date] = d.reason || "Closed";
+      });
+      renderCalendar(currentYear, currentMonth);
+    });
+}
 
 // ----------------- DISPLAY CONFIRMATION -----------------
 function displayConfirmation() {
