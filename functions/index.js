@@ -11,6 +11,38 @@ const {setGlobalOptions} = require("firebase-functions");
 const {onRequest} = require("firebase-functions/https");
 const logger = require("firebase-functions/logger");
 
+const functions = require("firebase-functions");
+const admin = require("firebase-admin");
+admin.initializeApp();
+
+const db = admin.firestore();
+
+exports.sendFiveHourReminders = functions.pubsub
+  .schedule("every 5 minutes")
+  .onRun(async () => {
+    const now = admin.firestore.Timestamp.now();
+
+    const snapshot = await db.collection("bookings")
+      .where("status", "==", "Accepted")
+      .where("reminderSent", "==", false)
+      .where("reminderAt", "<=", now)
+      .get();
+
+    snapshot.forEach(async doc => {
+      const booking = doc.data();
+
+      // 🔔 SEND REMINDER (WhatsApp or SMS)
+      console.log("Sending reminder to:", booking.clientPhone);
+
+      // Example: call your SMS / WhatsApp API here
+
+      await doc.ref.update({ reminderSent: true });
+    });
+
+    return null;
+  });
+
+
 // For cost control, you can set the maximum number of containers that can be
 // running at the same time. This helps mitigate the impact of unexpected
 // traffic spikes by instead downgrading performance. This limit is a
