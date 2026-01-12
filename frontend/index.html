@@ -358,6 +358,21 @@ let isSubmitting = false;
 const WORK_START = 8;  // 08:00
 const WORK_END = 17;  // 17:00
 const MAX_WORK_HOURS_PER_DAY = 8;
+const PUBLIC_HOLIDAYS = [
+  "2026-01-01", // New Year's Day
+  "2026-03-21", // Human Rights Day
+  "2026-04-03", // Good Friday
+  "2026-04-06", // Family Day
+  "2026-04-27", // Freedom Day
+  "2026-05-01", // Workers' Day
+  "2026-06-16", // Youth Day
+  "2026-08-09", // National Women's Day
+  "2026-09-24", // Heritage Day
+  "2026-12-16", // Day of Reconciliation
+  "2026-12-25"  // Christmas Day
+];
+
+  
 
   // ----------------- SCREEN NAVIGATION -----------------
 function showScreen(id, step) {
@@ -525,6 +540,23 @@ const booking = {
         hoursPerDay[b.date] = (hoursPerDay[b.date] || 0) + hours;
       });
 
+      const days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+days.forEach(d => {
+  const label = document.createElement("div");
+  label.textContent = d;
+  label.style.fontWeight = "bold";
+  label.style.textAlign = "center";
+  calendar.appendChild(label);
+});
+
+      const firstDay = new Date(year, month, 1).getDay();
+
+for (let i = 0; i < firstDay; i++) {
+  const empty = document.createElement("div");
+  calendar.appendChild(empty);
+}
+
+
       for (let day = 1; day <= daysInMonth; day++) {
         const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
         const div = document.createElement("div");
@@ -534,10 +566,34 @@ const booking = {
         const bookedHours = hoursPerDay[dateStr] || 0;
 
         // Disable past days
-        const dateObj = new Date(dateStr);
-        if (dateObj < today) {
-          div.classList.add("disabled");
-        }
+const dateObj = new Date(dateStr);
+const dayOfWeek = dateObj.getDay(); // 0 = Sunday
+
+// Disable past dates
+if (dateObj < today) {
+  div.classList.add("disabled");
+}
+
+// Disable Sundays ONLY
+if (dayOfWeek === 0) {
+  div.classList.add("disabled");
+}
+
+// Disable public holidays
+if (PUBLIC_HOLIDAYS.includes(dateStr)) {
+  div.classList.add("disabled");
+}
+
+        if (dayOfWeek === 0) {
+  div.classList.add("disabled");
+  div.title = "Closed on Sundays";
+}
+
+if (PUBLIC_HOLIDAYS.includes(dateStr)) {
+  div.classList.add("disabled");
+  div.title = "Closed on public holidays";
+}
+
 
         // Disable fully booked days
         if (bookedHours >= MAX_WORK_HOURS_PER_DAY) {
