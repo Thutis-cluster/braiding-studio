@@ -100,6 +100,10 @@ body {
   margin-top: 10px;
 }
 
+.calendar h3 {
+  text-align: center;
+}
+  
 .calendar-day {
   padding: 10px;
   text-align: center;
@@ -249,6 +253,12 @@ body {
 
 <div id="date" class="screen">
   <h2>Date & Time</h2>
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+  <button class="button" style="width:auto; padding:6px 10px;" onclick="changeMonth(-1)">◀</button>
+  <h3 id="calendarTitle" style="margin:0;"></h3>
+  <button class="button" style="width:auto; padding:6px 10px;" onclick="changeMonth(1)">▶</button>
+</div>
+
 <div id="calendar"></div>
 <input type="hidden" id="clientDate">
 <select id="clientTime" onchange="validateClientForm()">
@@ -355,6 +365,8 @@ let selectedLength = "";
 let selectedPrice = 0;
 let selectedTimeEstimate = "";
 let isSubmitting = false;
+  let currentYear;
+let currentMonth; // 0–11
 const WORK_START = 8;  // 08:00
 const WORK_END = 17;  // 17:00
 const MAX_WORK_HOURS_PER_DAY = 8;
@@ -384,10 +396,21 @@ function showScreen(id, step) {
   for (let i = 1; i <= step; i++)
     document.getElementById('step'+i).classList.add('active');
 
+if (id === "date") {
+  const now = new Date();
+  currentYear = now.getFullYear();
+  currentMonth = now.getMonth();
+  renderCalendar(currentYear, currentMonth);
+}
+
   if (id === "date") {
-    const now = new Date();
-    renderCalendar(now.getFullYear(), now.getMonth());
-  }
+  const now = new Date();
+  currentYear = now.getFullYear();
+  currentMonth = now.getMonth();
+  renderCalendar(currentYear, currentMonth);
+
+  setTimeout(enableCalendarSwipe, 100); // ✅ enable swipe
+}
 
   if (id === "confirmation") displayConfirmation();
 }
@@ -518,104 +541,172 @@ const booking = {
     .catch(err => alert("Error saving booking. Check Firestore rules: "+err));
 }
 
-  function renderCalendar(year, month) {
+function changeMonth(direction) {
+  currentMonth += direction;
+
+  if (currentMonth < 0) {
+    currentMonth = 11;
+    currentYear--;
+  }
+
+  if (currentMonth > 11) {
+    currentMonth = 0;
+    currentYear++;
+  }
+
+  renderCalendar(currentYear, currentMonth);
+}
+
+  function enableCalendarSwipe() {
   const calendar = document.getElementById("calendar");
+  let startX = 0;
+
+  calendar.addEventListener("touchstart", e => {
+    startX = e.touches[0].clientX;
+  });
+
+  calendar.addEventListener("touchend", e => {
+    const endX = e.changedTouches[0].clientX;
+    const diff = endX - startX;
+
+    // Swipe threshold
+    if (Math.abs(diff) < 50) return;
+
+    if (diff < 0) {
+      // swipe left → next month
+      changeMonth(1);
+    } else {
+      // swipe right → previous month
+      changeMonth(-1);
+    }
+  });
+}
+
+  function getSouthAfricanHolidays(year) {
+  return [
+    `${year}-01-01`, // New Year's Day
+    `${year}-03-21`, // Human Rights Day
+    `${year}-04-27`, // Freedom Day
+    `${year}-05-01`, // Workers' Day
+    `${year}-06-16`, // Youth Day
+    `${year}-08-09`, // National Women's Day
+    `${year}-09-24`, // Heritage Day
+    `${year}-12-16`, // Day of Reconciliation
+    `${year}-12-25`, // Christmas Day
+
+    // Movable (approx – safe defaults)
+    getGoodFriday(year),
+    getFamilyDay(year)
+  ];
+}
+
+  function getGoodFriday(year) {
+  const easter = getEasterSunday(year);
+  easter.setDate(easter.getDate() - 2);
+  return formatDate(easter);
+}
+
+function getFamilyDay(year) {
+  const easter = getEasterSunday(year);
+  easter.setDate(easter.getDate() + 1);
+  return formatDate(easter);
+}
+
+  function getEasterSunday(year) {
+  const f = Math.floor,
+    G = year % 19,
+    C = f(year / 100),
+    H = (C - f(C / 4) - f((8 * C + 13) / 25) + 19 * G + 15) % 30,
+    I = H - f(H / 28) * (1 - f(29 / (H + 1)) * f((21 - G) / 11)),
+    J = (year + f(year / 4) + I + 2 - C + f(C / 4)) % 7,
+    L = I - J,
+    month = 3 + f((L + 40) / 44),
+    day = L + 28 - 31 * f(month / 4);
+
+  return new Date(year, month - 1, day);
+}
+
+  function formatDate(date) {
+  return date.toISOString().split("T")[0];
+}
+
+ function renderCalendar(year, month) {
+   const PUBLIC_HOLIDAYS = getSouthAfricanHolidays(year);
+  const calendar = document.getElementById("calendar");
+  const title = document.getElementById("calendarTitle");
+
   calendar.innerHTML = "";
   calendar.className = "calendar";
 
+  const monthNames = [
+    "January","February","March","April","May","June",
+    "July","August","September","October","November","December"
+  ];
+
+  title.textContent = `${monthNames[month]} ${year}`;
+
   const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDay = new Date(year, month, 1).getDay();
 
-  // Fetch all bookings for the month
-  db.collection("bookings")
-    .where("date", ">=", `${year}-${String(month + 1).padStart(2, "0")}-01`)
-    .where("date", "<=", `${year}-${String(month + 1).padStart(2, "0")}-31`)
-    .get()
-    .then(snapshot => {
-      const hoursPerDay = {};
+  // Day labels
+  const labels = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  labels.forEach(d => {
+    const el = document.createElement("div");
+    el.textContent = d;
+    el.style.fontWeight = "bold";
+    el.style.textAlign = "center";
+    calendar.appendChild(el);
+  });
 
-      snapshot.forEach(doc => {
-        const b = doc.data();
-        const hours = estimateToHours(b.timeEstimate || "0");
-        hoursPerDay[b.date] = (hoursPerDay[b.date] || 0) + hours;
-      });
+  // Empty slots before day 1
+  for (let i = 0; i < firstDay; i++) {
+    calendar.appendChild(document.createElement("div"));
+  }
 
-      const days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-days.forEach(d => {
-  const label = document.createElement("div");
-  label.textContent = d;
-  label.style.fontWeight = "bold";
-  label.style.textAlign = "center";
-  calendar.appendChild(label);
-});
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateStr = `${year}-${String(month+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+    const div = document.createElement("div");
+    div.className = "calendar-day";
+    div.textContent = day;
 
-      const firstDay = new Date(year, month, 1).getDay();
+    const dateObj = new Date(dateStr);
+    const dayOfWeek = dateObj.getDay(); // 0 = Sunday
 
-for (let i = 0; i < firstDay; i++) {
-  const empty = document.createElement("div");
-  calendar.appendChild(empty);
+    // Disable past days
+    if (dateObj < today) {
+      div.classList.add("disabled");
+    }
+
+    // Disable Sundays
+    if (dayOfWeek === 0) {
+      div.classList.add("disabled");
+      div.title = "Closed on Sundays";
+    }
+
+    // Disable public holidays
+    if (PUBLIC_HOLIDAYS.includes(dateStr)) {
+      div.classList.add("disabled");
+      div.title = "Closed on public holidays";
+    }
+
+    div.onclick = () => {
+      if (div.classList.contains("disabled")) return;
+
+      document.querySelectorAll(".calendar-day")
+        .forEach(d => d.classList.remove("selected"));
+
+      div.classList.add("selected");
+      document.getElementById("clientDate").value = dateStr;
+      validateClientForm();
+    };
+
+    calendar.appendChild(div);
+  }
 }
 
-
-      for (let day = 1; day <= daysInMonth; day++) {
-        const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-        const div = document.createElement("div");
-        div.textContent = day;
-        div.className = "calendar-day";
-
-        const bookedHours = hoursPerDay[dateStr] || 0;
-
-        // Disable past days
-const dateObj = new Date(dateStr);
-const dayOfWeek = dateObj.getDay(); // 0 = Sunday
-
-// Disable past dates
-if (dateObj < today) {
-  div.classList.add("disabled");
-}
-
-// Disable Sundays ONLY
-if (dayOfWeek === 0) {
-  div.classList.add("disabled");
-}
-
-// Disable public holidays
-if (PUBLIC_HOLIDAYS.includes(dateStr)) {
-  div.classList.add("disabled");
-}
-
-        if (dayOfWeek === 0) {
-  div.classList.add("disabled");
-  div.title = "Closed on Sundays";
-}
-
-if (PUBLIC_HOLIDAYS.includes(dateStr)) {
-  div.classList.add("disabled");
-  div.title = "Closed on public holidays";
-}
-
-
-        // Disable fully booked days
-        if (bookedHours >= MAX_WORK_HOURS_PER_DAY) {
-          div.classList.add("disabled");
-        }
-
-        // Click handler
-        div.onclick = () => {
-          if (div.classList.contains("disabled")) return;
-
-          document.querySelectorAll(".calendar-day")
-            .forEach(d => d.classList.remove("selected"));
-
-          div.classList.add("selected");
-          document.getElementById("clientDate").value = dateStr;
-          validateClientForm();
-        };
-
-        calendar.appendChild(div);
-      }
-    });
-}
 
 // ----------------- DISPLAY CONFIRMATION -----------------
 function displayConfirmation() {
