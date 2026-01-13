@@ -182,6 +182,13 @@ body {
   border-left: 5px solid #27AE60;
 }
 
+  .forgot-password {
+  cursor: pointer;
+  color: #6a4dfd;
+  text-decoration: underline;
+  margin-top: 10px;
+}
+
 .booking-card.pending { border-left: 5px solid #F1C40F; background-color: #fff9e6; }
 .booking-card.accepted { border-left: 5px solid #27AE60; background-color: #e6fff0; }
 .booking-card.declined { border-left: 5px solid #E74C3C; background-color: #ffe6e6; }
@@ -335,6 +342,9 @@ body {
   <input type="password" id="adminPassword" placeholder="Password">
 
   <button class="button" onclick="adminLogin()">Login</button>
+  <p class="forgot-password" onclick="forgotAdminPassword()">
+  🔑 Forgot password?
+</p>
   <button class="button" onclick="showScreen('home',1)">Back</button>
 
   <p id="adminLoginError" class="error"></p>
@@ -1094,6 +1104,24 @@ function adminLogin() {
     })
     .catch(err => {
       errorEl.textContent = "❌ Login failed: " + err.message;
+    });
+}
+
+  function forgotAdminPassword() {
+  const email = document.getElementById("adminEmail").value.trim();
+
+  if (!email) {
+    alert("📧 Please enter your admin email first.");
+    return;
+  }
+
+  firebase.auth().sendPasswordResetEmail(email)
+    .then(() => {
+      alert("✅ Password reset email sent! Check your inbox.");
+    })
+    .catch(err => {
+      console.error("Password reset error:", err);
+      alert("❌ " + err.message);
     });
 }
 
