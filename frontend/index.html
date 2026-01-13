@@ -189,10 +189,22 @@ body {
   margin-top: 10px;
 }
 
-  .button.delete {
-  background-color: #e74c3c;
-  color: white;
-  margin-left: 5px;
+.booking-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.status-buttons button,
+.pitch-buttons button {
+  width: 80px;
+  margin-right: 5px;
+}
+
+.delete-button button {
+  margin-left: auto;
+  width: 100px;
 }
 
 .button.danger {
@@ -200,7 +212,6 @@ body {
   color: white;
   margin: 10px 0;
 }
-
 
 .booking-card.pending { border-left: 5px solid #F1C40F; background-color: #fff9e6; }
 .booking-card.accepted { border-left: 5px solid #27AE60; background-color: #e6fff0; }
@@ -1181,7 +1192,7 @@ function openAdmin() {
     return;
   }
 
-  showScreen("admin", 5); // move to admin screen
+  showScreen("admin", 5);
   const list = document.getElementById("bookingsList");
   const summary = document.getElementById("dailySummary");
 
@@ -1193,29 +1204,48 @@ function openAdmin() {
 
       const dailyTotals = {};
       const dailyRevenue = {};
+      const today = new Date();
+      today.setHours(0,0,0,0); // normalize to start of day
 
       snapshot.forEach(doc => {
         const booking = doc.data() || {};
         const id = doc.id;
+        const dateStr = booking.date || "Unknown";
+        const bookingDate = booking.date ? new Date(booking.date) : today;
+        bookingDate.setHours(0,0,0,0); // normalize
 
-        const date = booking.date || "Unknown";
         const hours = estimateToHours(booking.timeEstimate || "0");
-
-        // Daily work hours
-        dailyTotals[date] = (dailyTotals[date] || 0) + hours;
+        dailyTotals[dateStr] = (dailyTotals[dateStr] || 0) + hours;
 
         // Revenue only if pitched
         if (booking.pitched === "yes") {
-          dailyRevenue[date] = (dailyRevenue[date] || 0) + (booking.price || 0);
+          dailyRevenue[dateStr] = (dailyRevenue[dateStr] || 0) + (booking.price || 0);
         } else {
-          dailyRevenue[date] = dailyRevenue[date] || 0;
+          dailyRevenue[dateStr] = dailyRevenue[dateStr] || 0;
         }
 
-        // Status class for styling
+        // Status class
         const statusClass =
           booking.status === "Pending" ? "pending" :
           booking.status === "Accepted" ? "accepted" :
           booking.status === "Declined" ? "declined" : "pending";
+
+        // Pitch buttons logic
+        let pitchHTML = "";
+        if (bookingDate <= today) {
+          if (!booking.pitched || booking.pitched === "pending") {
+            pitchHTML = `
+              <div class="pitch-buttons">
+                <button class="button pitch" onclick="markPitched('${id}', 'yes')">Pitched</button>
+                <button class="button nopitch" onclick="markPitched('${id}', 'no')">Didn't Pitch</button>
+              </div>
+            `;
+          } else {
+            pitchHTML = `<p>Pitched: ${booking.pitched}</p>`;
+          }
+        } else {
+          pitchHTML = `<p>Pitched: Pending</p>`;
+        }
 
         // Booking card
         const card = document.createElement("div");
@@ -1224,15 +1254,21 @@ function openAdmin() {
           <p><strong>${booking.clientName || "Unknown Client"}</strong></p>
           <p>${booking.style || "Unknown Style"} – ${booking.length || "Unknown Length"}</p>
           <p>⏱ ${booking.timeEstimate || "0 hrs"}</p>
-          <p>${date} @ ${booking.time || "Unknown Time"}</p>
+          <p>${dateStr} @ ${booking.time || "Unknown Time"}</p>
           <p>Status: ${booking.status || "Pending"}</p>
-          <p>Pitched: ${booking.pitched || "no"}</p>
 
-          <button class="button accept" onclick="updateBookingStatus('${id}','Accepted')">Accept</button>
-          <button class="button decline" onclick="updateBookingStatus('${id}','Declined')">Decline</button>
-          <button class="button pitch" onclick="markPitched('${id}', 'yes')">Pitched</button>
-          <button class="button nopitch" onclick="markPitched('${id}', 'no')">Didn't Pitch</button>
-          <button class="button delete" onclick="deleteBooking('${id}')">Delete</button>
+          <div class="booking-buttons">
+            <div class="status-buttons">
+              <button class="button accept" onclick="updateBookingStatus('${id}','Accepted')">Accept</button>
+              <button class="button decline" onclick="updateBookingStatus('${id}','Declined')">Decline</button>
+            </div>
+
+            ${pitchHTML}
+
+            <div class="delete-button">
+              <button class="button delete" onclick="deleteBooking('${id}')">Delete</button>
+            </div>
+          </div>
         `;
         list.appendChild(card);
       });
@@ -1252,10 +1288,47 @@ function openAdmin() {
     });
 }
   
-function markPitched(id, status) {
-  db.collection("bookings").doc(id).update({ pitched: status })
-    .then(() => console.log(`Booking ${id} marked as pitched: ${status}`))
-    .catch(err => alert("❌ Failed to update pitched status: " + err));
+function markPitched(bookingId, value) {
+  if (!bookingId) return;
+
+  const bookingRef = db.collection("bookings").doc(bookingId);
+
+  bookingRef.update({ pitched: value })
+    .then(() => {
+      console.log(`Booking ${bookingId} marked as: ${value}`);
+
+      // Update the revenue display immediately without waiting for snapshot
+      const card = document.querySelector(`.booking-card button[onclick*="${bookingId}"]`).closest('.booking-card');
+      if (!card) return;
+
+      // Update the pitched text or remove buttons
+      const pitchDiv = card.querySelector('.pitch-buttons');
+      if (pitchDiv) {
+        pitchDiv.outerHTML = `<p>Pitched: ${value}</p>`;
+      }
+
+      // Recalculate daily revenue
+      const dateText = card.querySelector('p:nth-child(4)').textContent.split(' @ ')[0]; // extract booking date
+      const dailySummaryCards = document.querySelectorAll('#dailySummary .style-card');
+
+      dailySummaryCards.forEach(div => {
+        if (div.querySelector('strong').textContent === dateText) {
+          // Get all bookings for this date
+          let totalRevenue = 0;
+          document.querySelectorAll('.booking-card').forEach(bc => {
+            const bDate = bc.querySelector('p:nth-child(4)').textContent.split(' @ ')[0];
+            if (bDate === dateText) {
+              const pitchedText = bc.querySelector('p:nth-child(5)')?.textContent || '';
+              const price = parseFloat(bc.querySelector('p:nth-child(3)')?.textContent.replace(/[^\d]/g,'') || 0);
+              if (pitchedText.includes('yes')) totalRevenue += price;
+            }
+          });
+          div.innerHTML = div.innerHTML.replace(/💰 Revenue: R\d+/, `💰 Revenue: R${totalRevenue}`);
+        }
+      });
+
+    })
+    .catch(err => console.error("Error updating pitched status:", err));
 }
   
   function deleteBooking(id) {
