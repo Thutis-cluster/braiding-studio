@@ -1131,54 +1131,48 @@ function adminLogout() {
 
 // ----------------- ADMIN PANEL -----------------
 function openAdmin() {
-  if (!auth.currentUser) {
+    if (!auth.currentUser) {
     alert("⛔ Access denied. Admins only.");
-    showScreen("home", 1);
+    showScreen("home",1);
     return;
   }
-
-  showScreen("admin", 5);
+  
+  showScreen("admin", 5); // move to admin screen
   const list = document.getElementById("bookingsList");
   const summary = document.getElementById("dailySummary");
 
-  // Fetch all bookings, order by date ascending
   db.collection("bookings")
-    .orderBy("date", "asc")    // first sort by appointment date
-    .orderBy("time", "asc")    // then sort by time
+    .orderBy("createdAt", "desc")
     .onSnapshot(snapshot => {
       list.innerHTML = "";
       summary.innerHTML = "";
 
-      const dailyTotals = {};
-      const dailyRevenue = {};
+   const dailyTotals = {};
+   const dailyRevenue = {};
 
       snapshot.forEach(doc => {
         const booking = doc.data();
         const id = doc.id;
 
-        // Protect against missing fields
-        const date = booking.date || "Unknown Date";
-        const price = booking.price || 0;
+       dailyRevenue[booking.date] =
+       (dailyRevenue[booking.date] || 0) + (booking.price || 0);
+
         const hours = estimateToHours(booking.timeEstimate || "0");
+        dailyTotals[booking.date] =
+          (dailyTotals[booking.date] || 0) + hours;
 
-        // Aggregate totals
-        dailyRevenue[date] = (dailyRevenue[date] || 0) + price;
-        dailyTotals[date] = (dailyTotals[date] || 0) + hours;
-
-        // Determine status class
         const statusClass =
           booking.status === "Pending" ? "pending" :
           booking.status === "Accepted" ? "accepted" : "declined";
 
-        // Create booking card
         const card = document.createElement("div");
         card.className = `booking-card ${statusClass}`;
         card.innerHTML = `
           <p><strong>${booking.clientName}</strong></p>
-          <p>${booking.style || ""} – ${booking.length || ""}</p>
-          <p>⏱ ${booking.timeEstimate || ""}</p>
-          <p>${date} @ ${booking.time || ""}</p>
-          <p>Status: ${booking.status || "Pending"}</p>
+          <p>${booking.style} – ${booking.length}</p>
+          <p>⏱ ${booking.timeEstimate}</p>
+          <p>${booking.date} @ ${booking.time}</p>
+          <p>Status: ${booking.status}</p>
 
           <button class="button accept"
             onclick="updateBookingStatus('${id}','Accepted')">
@@ -1193,23 +1187,15 @@ function openAdmin() {
         list.appendChild(card);
       });
 
-      // Create daily summary cards
-      Object.keys(dailyTotals).sort().forEach(date => {
+      for (const date in dailyTotals) {
         const div = document.createElement("div");
         div.className = "style-card";
         div.innerHTML = `
           <strong>${date}</strong><br>
-          ⏱ Work: ${dailyTotals[date]} hrs<br>
-          💰 Revenue: R${dailyRevenue[date]}
+         ⏱ Work: ${dailyTotals[date]} hrs<br>
+         💰 Revenue: R${dailyRevenue[date]}
         `;
         summary.appendChild(div);
-      });
-
-      // Log if there are no bookings
-      if (snapshot.empty) {
-        list.innerHTML = "<p>No bookings found.</p>";
-        summary.innerHTML = "<p>No daily summaries yet.</p>";
-        console.log("📂 No bookings in Firebase.");
       }
     });
 }
