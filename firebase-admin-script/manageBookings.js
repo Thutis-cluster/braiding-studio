@@ -1,4 +1,3 @@
-// manageBookings.js
 const admin = require("firebase-admin");
 const serviceAccount = require("./serviceAccountKey.json");
 
@@ -11,33 +10,59 @@ const db = admin.firestore();
 
 async function fetchAndSortBookings() {
   try {
-    const snapshot = await db.collection("bookings").get();
+    // Fetch all bookings, sorted by date and time
+    const snapshot = await db.collection("bookings")
+      .orderBy("date")
+      .orderBy("time")
+      .get();
 
     if (snapshot.empty) {
       console.log("No bookings found.");
       return;
     }
 
-    // Convert docs to an array
-    const bookings = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    const bookings = [];
+    const dailyTotals = {};    // Track total hours per day
+    const dailyRevenue = {};   // Track total revenue per day
 
-    // Sort by date then time
-    bookings.sort((a, b) => {
-      const dateA = new Date(`${a.date}T${a.time}`);
-      const dateB = new Date(`${b.date}T${b.time}`);
-      return dateA - dateB;
-    }));
+    snapshot.forEach(doc => {
+      const booking = doc.data();
+      booking.id = doc.id;
 
-    console.log("Sorted Bookings:");
-    bookings.forEach(b => {
-      console.log(`🔹 ${b.date} ${b.time} | ${b.clientName} | ${b.style} - ${b.length} | R${b.price} | Status: ${b.status}`);
+      // Convert timeEstimate to hours (take max)
+      const hours = getHoursFromEstimate(booking.timeEstimate || "0");
+
+      bookings.push({ ...booking, hours });
+
+      // Aggregate daily totals
+      dailyTotals[booking.date] = (dailyTotals[booking.date] || 0) + hours;
+      dailyRevenue[booking.date] = (dailyRevenue[booking.date] || 0) + (booking.price || 0);
     });
+
+    // Display sorted bookings
+    console.log("=== All Bookings (sorted) ===");
+    bookings.forEach(b => {
+      console.log(
+        `${b.date} @ ${b.time} | ${b.clientName} | ${b.style} (${b.length}) | R${b.price} | ${b.timeEstimate} | Status: ${b.status}`
+      );
+    });
+
+    // Display daily summary
+    console.log("\n=== Daily Summary ===");
+    for (const date of Object.keys(dailyTotals).sort()) {
+      console.log(`${date} → Total Hours: ${dailyTotals[date]} hrs | Revenue: R${dailyRevenue[date]}`);
+    }
+
   } catch (err) {
     console.error("Error fetching bookings:", err);
   }
 }
 
+function getHoursFromEstimate(estimate) {
+  const numbers = estimate.match(/\d+(\.\d+)?/g);
+  if (!numbers) return 0;
+  return Math.max(...numbers.map(Number));
+}
+
+// Run the script
 fetchAndSortBookings();
