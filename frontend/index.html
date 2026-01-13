@@ -719,18 +719,6 @@ function getFamilyDay(year) {
       div.title = "Closed on public holidays";
     }
 
-    if (HOLIDAYS[dateStr]) {
-  div.classList.add("disabled");
-  div.title = `Public Holiday: ${HOLIDAYS[dateStr]}`;
-  div.style.background = "#ffe6e6";
-}
-
-   if (ADMIN_CLOSED_DAYS[dateStr]) {
-  div.classList.add("disabled");
-  div.title = `Closed: ${ADMIN_CLOSED_DAYS[dateStr]}`;
-  div.style.background = "#eee";
-}
-
     div.onclick = () => {
       if (div.classList.contains("disabled")) return;
 
@@ -1069,23 +1057,7 @@ function updateBookingStatus(id, status) {
         else sendWhatsAppToClient(booking, `✅ Your booking status is now: ${status}!!`);
       });
     })
-
-      .then(() => {
-  if (status === "Accepted") {
-    const [hour, minute] = booking.time.split(":").map(Number);
-    const appointmentDate = new Date(booking.date);
-    appointmentDate.setHours(hour, minute, 0, 0);
-
-    const reminderAt = new Date(
-      appointmentDate.getTime() - 5 * 60 * 60 * 1000
-    );
-
-    return db.collection("bookings").doc(id).update({
-      reminderAt: firebase.firestore.Timestamp.fromDate(reminderAt),
-      reminderSent: false
-    });
-  }
-})
+    
     .catch(err => {
       console.error("Error updating booking:", err);
       if (err.message !== "Not admin") alert("❌ Permission denied");
