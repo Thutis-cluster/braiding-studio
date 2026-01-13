@@ -365,6 +365,11 @@ body {
 
   // ----------------- FIREBASE -----------------
   console.log("🔥 THIS IS THE SCRIPT RUNNING");
+  firebase.appCheck().activate(
+  "YOUR_RECAPTCHA_SITE_KEY",
+  true // auto-refresh tokens
+);
+
 
 const firebaseConfig = {
   apiKey: "AIzaSyDYzO6pW5fjL6OhKrtELohjpzev8znveys",
@@ -1107,21 +1112,16 @@ function adminLogin() {
     });
 }
 
-  function forgotAdminPassword() {
+function forgotAdminPassword() {
   const email = document.getElementById("adminEmail").value.trim();
-
-  if (!email) {
-    alert("📧 Please enter your admin email first.");
-    return;
-  }
+  if (!email) return alert("Please enter your email.");
 
   firebase.auth().sendPasswordResetEmail(email)
     .then(() => {
-      alert("✅ Password reset email sent! Check your inbox.");
+      alert("If this email exists, a reset link has been sent.");
     })
-    .catch(err => {
-      console.error("Password reset error:", err);
-      alert("❌ " + err.message);
+    .catch(() => {
+      alert("If this email exists, a reset link has been sent.");
     });
 }
 
