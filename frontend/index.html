@@ -434,6 +434,15 @@ function showScreen(id, step) {
   setTimeout(enableCalendarSwipe, 100);
 }
 
+  function showScreen(screenName) {
+  // Example: hide all screens, show the one requested
+  const screens = document.querySelectorAll('.screen');
+  screens.forEach(s => s.style.display = 'none');
+
+  const active = document.getElementById(screenName);
+  if (active) active.style.display = 'block';
+}
+
 if (id === "date") {
   const now = new Date();
   currentYear = now.getFullYear();
