@@ -659,18 +659,6 @@ function getFamilyDay(year) {
 }
 
  function renderCalendar(year, month) {
-if (HOLIDAYS[dateStr]) {
-  div.classList.add("disabled");
-  div.title = `Public Holiday: ${HOLIDAYS[dateStr]}`;
-  div.style.background = "#ffe6e6";
-}
-
-   if (ADMIN_CLOSED_DAYS[dateStr]) {
-  div.classList.add("disabled");
-  div.title = `Closed: ${ADMIN_CLOSED_DAYS[dateStr]}`;
-  div.style.background = "#eee";
-}
-
   const calendar = document.getElementById("calendar");
   const title = document.getElementById("calendarTitle");
 
@@ -730,6 +718,18 @@ if (HOLIDAYS[dateStr]) {
       div.classList.add("disabled");
       div.title = "Closed on public holidays";
     }
+
+    if (HOLIDAYS[dateStr]) {
+  div.classList.add("disabled");
+  div.title = `Public Holiday: ${HOLIDAYS[dateStr]}`;
+  div.style.background = "#ffe6e6";
+}
+
+   if (ADMIN_CLOSED_DAYS[dateStr]) {
+  div.classList.add("disabled");
+  div.title = `Closed: ${ADMIN_CLOSED_DAYS[dateStr]}`;
+  div.style.background = "#eee";
+}
 
     div.onclick = () => {
       if (div.classList.contains("disabled")) return;
@@ -1009,9 +1009,6 @@ function sendReminderIfDue(booking) {
 
   const now = new Date();
   const diffHours = (appointmentDate - now) / 1000 / 60 / 60; // hours remaining
-
-  reminderAt: firebase.firestore.Timestamp.fromDate(
-  new Date(appointmentDate.getTime() - 5 * 60 * 60 * 1000)
 )
   
   // Trigger reminder exactly 5 hours before
@@ -1062,7 +1059,7 @@ function updateBookingStatus(id, status) {
     })
     .then(() => {
       console.log("Booking updated:", id, status);
-
+     
       // Send WhatsApp/SMS to client
       db.collection("bookings").doc(id).get().then(doc => {
         const booking = doc.data();
@@ -1071,14 +1068,9 @@ function updateBookingStatus(id, status) {
         if (booking.method === "sms") sendSmsToClient(booking, `✅ Your booking status is now: ${status}!!`);
         else sendWhatsAppToClient(booking, `✅ Your booking status is now: ${status}!!`);
       });
-
     })
-    .catch(err => {
-      console.error("Error updating booking:", err);
-      if (err.message !== "Not admin") alert("❌ Permission denied");
-    });
 
-  .then(() => {
+      .then(() => {
   if (status === "Accepted") {
     const [hour, minute] = booking.time.split(":").map(Number);
     const appointmentDate = new Date(booking.date);
@@ -1094,6 +1086,10 @@ function updateBookingStatus(id, status) {
     });
   }
 })
+    .catch(err => {
+      console.error("Error updating booking:", err);
+      if (err.message !== "Not admin") alert("❌ Permission denied");
+    });
 }
 
 function adminLogin() {
