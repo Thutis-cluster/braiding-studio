@@ -1109,17 +1109,15 @@ function adminLogin() {
     });
 }
 
-function forgotAdminPassword() {
-  const email = document.getElementById("adminEmail").value.trim();
-  if (!email) return alert("Please enter your email.");
-
-  firebase.auth().sendPasswordResetEmail(email)
-    .then(() => {
-      alert("If this email exists, a reset link has been sent.");
-    })
-    .catch(() => {
-      alert("If this email exists, a reset link has been sent.");
-    });
+async function sendAdminPasswordReset(email) {
+  const { auth } = await initFirebase();
+  try {
+    await auth.sendPasswordResetEmail(email);
+    alert("✅ Reset email sent. Check your inbox.");
+  } catch (err) {
+    console.error("Reset email failed:", err);
+    alert("❌ Failed to send reset email: " + err.message);
+  }
 }
 
 auth.onAuthStateChanged(user => {
