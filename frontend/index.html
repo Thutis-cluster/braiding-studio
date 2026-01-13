@@ -177,16 +177,84 @@ body {
   display: none;
 }
 
-  #dailySummary .style-card {
-  background: #e6fff0;
-  border-left: 5px solid #27AE60;
+  /* Admin Login / Professional Form */
+#adminLogin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 400px;
+  margin: 50px auto;
+  padding: 30px;
+  background-color: #fff5f0;
+  border-radius: 15px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  text-align: center;
 }
 
-  .forgot-password {
+#adminLogin h2 {
+  font-size: 28px;
+  margin-bottom: 15px;
+  color: #4b2e2e;
+}
+
+#adminLogin input {
+  width: 100%;
+  padding: 12px 15px;
+  margin-bottom: 15px;
+  border: 1px solid #e0cfc1;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+#adminLogin input:focus {
+  border-color: #d2996c;
+  box-shadow: 0 0 6px rgba(210,153,108,0.5);
+}
+
+#adminLogin .button {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 12px;
+  font-size: 16px;
+  border-radius: 8px;
+  border: none;
   cursor: pointer;
-  color: #6a4dfd;
-  text-decoration: underline;
+  background-color: #d2996c;
+  color: white;
+  font-weight: bold;
+  transition: background 0.3s ease;
+}
+
+#adminLogin .button:hover {
+  background-color: #b77a4e;
+}
+
+#adminLogin .forgot-password {
   margin-top: 10px;
+  font-size: 13px;
+  color: #d2996c;
+  text-decoration: underline;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+#adminLogin .forgot-password:hover {
+  color: #b77a4e;
+}
+
+#adminLogin .error {
+  color: #E74C3C;
+  font-size: 13px;
+  margin-top: 5px;
+}
+
+
+#dailySummary .style-card {
+  background: #e6fff0;
+  border-left: 5px solid #27AE60;
 }
 
 .booking-buttons {
