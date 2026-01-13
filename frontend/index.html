@@ -1109,15 +1109,21 @@ function adminLogin() {
     });
 }
 
-async function sendAdminPasswordReset(email) {
-  const { auth } = await initFirebase();
-  try {
-    await auth.sendPasswordResetEmail(email);
-    alert("✅ Reset email sent. Check your inbox.");
-  } catch (err) {
-    console.error("Reset email failed:", err);
-    alert("❌ Failed to send reset email: " + err.message);
+function forgotAdminPassword() {
+  const email = document.getElementById("adminEmail").value.trim();
+
+  if (!email) {
+    alert("⚠️ Please enter your admin email first.");
+    return;
   }
+
+  auth.sendPasswordResetEmail(email)
+    .then(() => {
+      alert("✅ Password reset email sent. Check your inbox.");
+    })
+    .catch(err => {
+      alert("❌ Error: " + err.message);
+    });
 }
 
 auth.onAuthStateChanged(user => {
