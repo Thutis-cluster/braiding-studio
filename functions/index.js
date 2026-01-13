@@ -42,6 +42,80 @@ exports.sendFiveHourReminders = functions.pubsub
     return null;
   });
 
+const functions = require("firebase-functions");
+const admin = require("firebase-admin");
+const twilio = require("twilio");
+
+admin.initializeApp();
+const db = admin.firestore();
+
+const client = twilio(
+  functions.config().twilio.sid,
+  functions.config().twilio.token
+);
+
+const TWILIO_SMS = functions.config().twilio.phone;
+const TWILIO_WHATSAPP = "whatsapp:+14155238886"; // Twilio sandbox
+
+async function sendSmsReminder(booking, message) {
+  await client.messages.create({
+    body: message,
+    from: TWILIO_SMS,
+    to: booking.clientPhone
+  });
+}
+
+async function sendWhatsAppReminder(booking, message) {
+  await client.messages.create({
+    body: message,
+    from: TWILIO_WHATSAPP,
+    to: "whatsapp:" + booking.clientPhone
+  });
+}
+
+exports.sendFiveHourReminders = functions.pubsub
+  .schedule("every 5 minutes")
+  .onRun(async () => {
+
+    const now = admin.firestore.Timestamp.now();
+
+    const snapshot = await db.collection("bookings")
+      .where("status", "==", "Accepted")
+      .where("reminderSent", "==", false)
+      .where("reminderAt", "<=", now)
+      .get();
+
+    for (const doc of snapshot.docs) {
+      const booking = doc.data();
+
+      const message =
+        `⏰ Reminder:\nHi ${booking.clientName},\n` +
+        `Your ${booking.style} appointment is in 5 hours.\n` +
+        `📅 ${booking.date}\n🕒 ${booking.time}`;
+
+      if (booking.method === "whatsapp") {
+        await sendWhatsAppReminder(booking, message);
+      } else {
+        await sendSmsReminder(booking, message);
+      }
+
+      // 🧾 LOG REMINDER
+      await db.collection("reminderLogs").add({
+        bookingId: doc.id,
+        clientName: booking.clientName,
+        phone: booking.clientPhone,
+        method: booking.method,
+        sentAt: admin.firestore.FieldValue.serverTimestamp(),
+        type: "5-hour"
+      });
+
+      await doc.ref.update({ reminderSent: true });
+    }
+
+    return null;
+  });
+
+
 
 // For cost control, you can set the maximum number of containers that can be
 // running at the same time. This helps mitigate the impact of unexpected
