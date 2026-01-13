@@ -412,7 +412,8 @@ const PUBLIC_HOLIDAYS = [
   "2026-12-16", // Day of Reconciliation
   "2026-12-25"  // Christmas Day
 ];
-
+const auth = getAuth();
+  
   // ----------------- SCREEN NAVIGATION -----------------
 function showScreen(id, step) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
