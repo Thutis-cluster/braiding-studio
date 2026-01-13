@@ -1252,19 +1252,10 @@ function openAdmin() {
     });
 }
   
-function markPitched(bookingId, value) {
-  if (!auth.currentUser) {
-    alert("⛔ Admin only");
-    return;
-  }
-
-  db.collection("bookings").doc(bookingId).update({ pitched: value })
-    .then(() => {
-      console.log(`Booking ${bookingId} marked as pitched: ${value}`);
-      // Update the admin panel instantly
-      openAdmin();
-    })
-    .catch(err => console.error("Error updating pitched status:", err));
+function markPitched(id, status) {
+  db.collection("bookings").doc(id).update({ pitched: status })
+    .then(() => console.log(`Booking ${id} marked as pitched: ${status}`))
+    .catch(err => alert("❌ Failed to update pitched status: " + err));
 }
   
   function deleteBooking(id) {
