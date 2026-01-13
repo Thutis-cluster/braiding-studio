@@ -189,6 +189,19 @@ body {
   margin-top: 10px;
 }
 
+  .button.delete {
+  background-color: #e74c3c;
+  color: white;
+  margin-left: 5px;
+}
+
+.button.danger {
+  background-color: #c0392b;
+  color: white;
+  margin: 10px 0;
+}
+
+
 .booking-card.pending { border-left: 5px solid #F1C40F; background-color: #fff9e6; }
 .booking-card.accepted { border-left: 5px solid #27AE60; background-color: #e6fff0; }
 .booking-card.declined { border-left: 5px solid #E74C3C; background-color: #ffe6e6; }
@@ -213,6 +226,7 @@ body {
 <!-- Screens -->
 <div id="home" class="screen active">
   <h1>Mumsy Braids Studio</h1>
+  <audio id="bookingSound" src="ding.mp3" preload="auto"></audio>
 
   <button class="button" onclick="showScreen('styles',2)">
     Book Appointment
@@ -357,6 +371,7 @@ body {
     <div id="dailySummary"></div>
     <p>Loading bookings...</p>
   </div>
+  <button id="clearAllBtn" class="button danger">Clear All Bookings</button>
   <h3>🧾 Reminder Logs</h3>
 <div id="reminderLogs"></div>
 </div>
@@ -996,40 +1011,38 @@ function sendSmsToClient(booking, messageIntro = "") {
 
       // ----------------- REMINDERS -----------------
 function sendReminderIfDue(booking) {
-  // Only proceed if appointment exists and reminder hasn't been sent
-  if (!booking.date || !booking.time || booking.reminderSent) return;
+    if (!booking.date || !booking.time || booking.reminderSent) return;
 
-  // Construct appointment datetime
-  const [hour, minute] = booking.time.split(":").map(Number);
-  const appointmentDate = new Date(booking.date);
-  appointmentDate.setHours(hour, minute, 0, 0);
+    const [hour, minute] = booking.time.split(":").map(Number);
+    const appointmentDate = new Date(booking.date);
+    appointmentDate.setHours(hour, minute, 0, 0);
 
-  const now = new Date();
-  const diffHours = (appointmentDate - now) / 1000 / 60 / 60; // hours remaining
-  
-  // Trigger reminder exactly 5 hours before
-  if (diffHours <= 5 && diffHours > 4 && !booking.reminderSent) {
-    const message = `⏰ Reminder: Hi ${booking.clientName}, your appointment for ${booking.style} (${booking.length}) is in 5 hours at ${booking.time} on ${booking.date}.`;
+    const now = new Date();
+    const diffHours = (appointmentDate - now) / (1000 * 60 * 60);
 
-    // Use the same method the client chose
-    if (booking.method === "sms") {
-      sendSmsToClient(booking, message);
-    } else if (booking.method === "whatsapp") {
-      sendWhatsAppToClient(booking, message);
+    if (diffHours <= 5 && diffHours > 4 && !booking.reminderSent) {
+        const message = `⏰ Reminder: Hi ${booking.clientName}, your appointment for ${booking.style} (${booking.length}) is in 5 hours at ${booking.time} on ${booking.date}.`;
+
+        if (booking.method === "sms") {
+            sendSmsToClient(booking, message);
+        } else {
+            sendWhatsAppToClient(booking, message);
+        }
+
+        // Optional: add a chat message for admin
+        db.collection("adminChat").add({
+            message: `Reminder sent to ${booking.clientName} for ${booking.date} ${booking.time}`,
+            timestamp: firebase.firestore.Timestamp.now(),
+            type: "reminder"
+        });
+
+        // Mark reminder sent in Firestore
+        if (booking.id) {
+            db.collection("bookings").doc(booking.id).update({ reminderSent: true })
+                .then(() => console.log("5-hour reminder sent for", booking.clientName))
+                .catch(err => console.error("Error updating reminder:", err));
+        }
     }
-
-    // Mark reminder sent
-    booking.reminderSent = true;
-
-    // Update in Firebase so it won't send again
-    if (booking.id) {
-      db.collection("bookings").doc(booking.id).update({ reminderSent: true })
-        .then(() => console.log("5-hour reminder sent and updated in Firestore"))
-        .catch(err => console.error("Error updating reminder status:", err));
-    } else {
-      console.log("5-hour reminder sent locally:", booking.clientName);
-    }
-  }
 }
 
 // ----------------- STATUS UPDATE -----------------
@@ -1172,62 +1185,75 @@ function openAdmin() {
   const list = document.getElementById("bookingsList");
   const summary = document.getElementById("dailySummary");
 
-  db.collection("bookings")
-    .orderBy("createdAt", "desc")
-    .onSnapshot(snapshot => {
-      list.innerHTML = "";
-      summary.innerHTML = "";
+let knownBookings = new Set();
 
-   const dailyTotals = {};
-   const dailyRevenue = {};
+db.collection("bookings")
+  .orderBy("createdAt", "desc")
+  .onSnapshot(snapshot => {
+    const list = document.getElementById("bookingsList");
+    const summary = document.getElementById("dailySummary");
+    
+    snapshot.docChanges().forEach(change => {
+        const booking = change.doc.data();
+        booking.id = change.doc.id;
 
-      snapshot.forEach(doc => {
+        // NEW booking added
+        if (change.type === "added" && !knownBookings.has(booking.id)) {
+            knownBookings.add(booking.id);
+
+            // 🔔 Play sound
+            document.getElementById("bookingSound").play();
+
+            // Optional: highlight new booking visually
+            const card = document.createElement("div");
+            card.className = "booking-card new-booking"; // add CSS for highlight
+            card.innerHTML = `
+                <p><strong>${booking.clientName}</strong></p>
+                <p>${booking.style} – ${booking.length}</p>
+                <p>⏱ ${booking.timeEstimate}</p>
+                <p>${booking.date} @ ${booking.time}</p>
+                <p>Status: ${booking.status}</p>
+                <button class="button accept" onclick="updateBookingStatus('${booking.id}','Accepted')"> Accept </button>
+                <button class="button decline" onclick="updateBookingStatus('${booking.id}','Declined')"> Decline </button>
+                <button class="button delete" onclick="deleteBooking('${booking.id}')"> Delete </button>
+            `;
+            list.prepend(card); // show new booking at top
+        }
+    });
+
+    // update daily summary as before
+    const dailyTotals = {};
+    const dailyRevenue = {};
+    snapshot.forEach(doc => {
         const booking = doc.data();
-        const id = doc.id;
-
-       dailyRevenue[booking.date] =
-       (dailyRevenue[booking.date] || 0) + (booking.price || 0);
-
+        dailyRevenue[booking.date] = (dailyRevenue[booking.date] || 0) + (booking.price || 0);
         const hours = estimateToHours(booking.timeEstimate || "0");
-        dailyTotals[booking.date] =
-          (dailyTotals[booking.date] || 0) + hours;
+        dailyTotals[booking.date] = (dailyTotals[booking.date] || 0) + hours;
+    });
 
-        const statusClass =
-          booking.status === "Pending" ? "pending" :
-          booking.status === "Accepted" ? "accepted" : "declined";
-
-        const card = document.createElement("div");
-        card.className = `booking-card ${statusClass}`;
-        card.innerHTML = `
-          <p><strong>${booking.clientName}</strong></p>
-          <p>${booking.style} – ${booking.length}</p>
-          <p>⏱ ${booking.timeEstimate}</p>
-          <p>${booking.date} @ ${booking.time}</p>
-          <p>Status: ${booking.status}</p>
-
-          <button class="button accept"
-            onclick="updateBookingStatus('${id}','Accepted')">
-            Accept
-          </button>
-
-          <button class="button decline"
-            onclick="updateBookingStatus('${id}','Declined')">
-            Decline
-          </button>
-        `;
-        list.appendChild(card);
-      });
-
-      for (const date in dailyTotals) {
+    summary.innerHTML = "";
+    for (const date in dailyTotals) {
         const div = document.createElement("div");
         div.className = "style-card";
-        div.innerHTML = `
-          <strong>${date}</strong><br>
-         ⏱ Work: ${dailyTotals[date]} hrs<br>
-         💰 Revenue: R${dailyRevenue[date]}
-        `;
+        div.innerHTML = `<strong>${date}</strong><br> ⏱ Work: ${dailyTotals[date]} hrs<br> 💰 Revenue: R${dailyRevenue[date]}`;
         summary.appendChild(div);
-      }
+    }
+});
+}
+
+  function deleteBooking(id) {
+  if (!auth.currentUser) return alert("⛔ Admin only");
+
+  if (!confirm("⚠️ Are you sure you want to delete this booking?")) return;
+
+  db.collection("bookings").doc(id).delete()
+    .then(() => {
+      console.log("Booking deleted:", id);
+      alert("Booking deleted successfully!");
+    })
+    .catch(err => {
+      console.error("Error deleting booking:", err);
+      alert("Failed to delete booking.");
     });
 }
 
@@ -1240,6 +1266,28 @@ function openAdmin() {
       : "📱 Send Booking on WhatsApp";
   });
 }
+
+  document.getElementById("clearAllBtn").onclick = async function() {
+  if (!auth.currentUser) return alert("⛔ Admin only");
+  if (!confirm("⚠️ This will delete ALL bookings. Are you sure?")) return;
+
+  try {
+    const snapshot = await db.collection("bookings").get();
+    const batch = db.batch();
+
+    snapshot.forEach(doc => {
+      batch.delete(doc.ref);
+    });
+
+    await batch.commit();
+    alert("✅ All bookings cleared!");
+    console.log("All bookings deleted.");
+  } catch (err) {
+    console.error("Error clearing bookings:", err);
+    alert("❌ Failed to clear all bookings.");
+  }
+};
+
 
 // Periodically check for reminders every 5 minutes
 setInterval(() => {
