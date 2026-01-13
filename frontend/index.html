@@ -1175,72 +1175,98 @@ function adminLogout() {
 
 // ----------------- ADMIN PANEL -----------------
 function openAdmin() {
-    if (!auth.currentUser) {
+  if (!auth.currentUser) {
     alert("⛔ Access denied. Admins only.");
-    showScreen("home",1);
+    showScreen("home", 1);
     return;
   }
-  
+
   showScreen("admin", 5); // move to admin screen
   const list = document.getElementById("bookingsList");
   const summary = document.getElementById("dailySummary");
 
-let knownBookings = new Set();
+  db.collection("bookings")
+    .orderBy("createdAt", "desc")
+    .onSnapshot(snapshot => {
+      list.innerHTML = "";
+      summary.innerHTML = "";
 
-db.collection("bookings")
-  .orderBy("createdAt", "desc")
-  .onSnapshot(snapshot => {
-    const list = document.getElementById("bookingsList");
-    const summary = document.getElementById("dailySummary");
-    
-    snapshot.docChanges().forEach(change => {
-        const booking = change.doc.data();
-        booking.id = change.doc.id;
+      const dailyTotals = {};
+      const dailyRevenue = {};
 
-        // NEW booking added
-        if (change.type === "added" && !knownBookings.has(booking.id)) {
-            knownBookings.add(booking.id);
+      snapshot.forEach(doc => {
+        const booking = doc.data() || {};
+        const id = doc.id;
 
-            // 🔔 Play sound
-            document.getElementById("bookingSound").play();
-
-            // Optional: highlight new booking visually
-            const card = document.createElement("div");
-            card.className = "booking-card new-booking"; // add CSS for highlight
-            card.innerHTML = `
-                <p><strong>${booking.clientName}</strong></p>
-                <p>${booking.style} – ${booking.length}</p>
-                <p>⏱ ${booking.timeEstimate}</p>
-                <p>${booking.date} @ ${booking.time}</p>
-                <p>Status: ${booking.status}</p>
-                <button class="button accept" onclick="updateBookingStatus('${booking.id}','Accepted')"> Accept </button>
-                <button class="button decline" onclick="updateBookingStatus('${booking.id}','Declined')"> Decline </button>
-                <button class="button delete" onclick="deleteBooking('${booking.id}')"> Delete </button>
-            `;
-            list.prepend(card); // show new booking at top
-        }
-    });
-
-    // update daily summary as before
-    const dailyTotals = {};
-    const dailyRevenue = {};
-    snapshot.forEach(doc => {
-        const booking = doc.data();
-        dailyRevenue[booking.date] = (dailyRevenue[booking.date] || 0) + (booking.price || 0);
+        const date = booking.date || "Unknown";
         const hours = estimateToHours(booking.timeEstimate || "0");
-        dailyTotals[booking.date] = (dailyTotals[booking.date] || 0) + hours;
-    });
 
-    summary.innerHTML = "";
-    for (const date in dailyTotals) {
+        // Daily work hours
+        dailyTotals[date] = (dailyTotals[date] || 0) + hours;
+
+        // Revenue only if pitched
+        if (booking.pitched === "yes") {
+          dailyRevenue[date] = (dailyRevenue[date] || 0) + (booking.price || 0);
+        } else {
+          dailyRevenue[date] = dailyRevenue[date] || 0;
+        }
+
+        // Status class for styling
+        const statusClass =
+          booking.status === "Pending" ? "pending" :
+          booking.status === "Accepted" ? "accepted" :
+          booking.status === "Declined" ? "declined" : "pending";
+
+        // Booking card
+        const card = document.createElement("div");
+        card.className = `booking-card ${statusClass}`;
+        card.innerHTML = `
+          <p><strong>${booking.clientName || "Unknown Client"}</strong></p>
+          <p>${booking.style || "Unknown Style"} – ${booking.length || "Unknown Length"}</p>
+          <p>⏱ ${booking.timeEstimate || "0 hrs"}</p>
+          <p>${date} @ ${booking.time || "Unknown Time"}</p>
+          <p>Status: ${booking.status || "Pending"}</p>
+          <p>Pitched: ${booking.pitched || "no"}</p>
+
+          <button class="button accept" onclick="updateBookingStatus('${id}','Accepted')">Accept</button>
+          <button class="button decline" onclick="updateBookingStatus('${id}','Declined')">Decline</button>
+          <button class="button pitch" onclick="markPitched('${id}', 'yes')">Pitched</button>
+          <button class="button nopitch" onclick="markPitched('${id}', 'no')">Didn't Pitch</button>
+          <button class="button delete" onclick="deleteBooking('${id}')">Delete</button>
+        `;
+        list.appendChild(card);
+      });
+
+      // Daily summary
+      for (const date in dailyTotals) {
         const div = document.createElement("div");
         div.className = "style-card";
-        div.innerHTML = `<strong>${date}</strong><br> ⏱ Work: ${dailyTotals[date]} hrs<br> 💰 Revenue: R${dailyRevenue[date]}`;
+        div.innerHTML = `
+          <strong>${date}</strong><br>
+          ⏱ Work: ${dailyTotals[date]} hrs<br>
+          💰 Revenue: R${dailyRevenue[date]}<br>
+          <button class="button clear" onclick="clearBookingsForDate('${date}')">Clear</button>
+        `;
         summary.appendChild(div);
-    }
-});
+      }
+    });
 }
+  
+function markPitched(bookingId, value) {
+  if (!auth.currentUser) {
+    alert("⛔ Admin only");
+    return;
+  }
 
+  db.collection("bookings").doc(bookingId).update({ pitched: value })
+    .then(() => {
+      console.log(`Booking ${bookingId} marked as pitched: ${value}`);
+      // Update the admin panel instantly
+      openAdmin();
+    })
+    .catch(err => console.error("Error updating pitched status:", err));
+}
+  
   function deleteBooking(id) {
   if (!auth.currentUser) return alert("⛔ Admin only");
 
