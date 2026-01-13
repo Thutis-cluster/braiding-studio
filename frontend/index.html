@@ -365,11 +365,6 @@ body {
 
   // ----------------- FIREBASE -----------------
   console.log("🔥 THIS IS THE SCRIPT RUNNING");
-  //-----firebase.appCheck().activate(
-  //----"YOUR_RECAPTCHA_SITE_KEY",
-  //---true // auto-refresh tokens
-//----);
-
 
 const firebaseConfig = {
   apiKey: "AIzaSyDYzO6pW5fjL6OhKrtELohjpzev8znveys",
@@ -432,15 +427,6 @@ function showScreen(id, step) {
   renderCalendar(currentYear, currentMonth);
 
   setTimeout(enableCalendarSwipe, 100);
-}
-
-  function showScreen(screenName) {
-  // Example: hide all screens, show the one requested
-  const screens = document.querySelectorAll('.screen');
-  screens.forEach(s => s.style.display = 'none');
-
-  const active = document.getElementById(screenName);
-  if (active) active.style.display = 'block';
 }
 
 if (id === "date") {
