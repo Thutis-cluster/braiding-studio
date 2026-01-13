@@ -1119,10 +1119,17 @@ function forgotAdminPassword() {
 
   auth.sendPasswordResetEmail(email)
     .then(() => {
-      alert("✅ Password reset email sent. Check your inbox.");
+      alert("✅ Password reset email sent. Check your inbox or spam folder.");
     })
     .catch(err => {
-      alert("❌ Error: " + err.message);
+      console.error("Password reset error:", err);
+
+      let message = "❌ Failed to send reset email.";
+      if (err.code === "auth/user-not-found") {
+        message = "❌ No admin account found with this email.";
+      }
+
+      alert(message);
     });
 }
 
