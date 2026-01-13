@@ -412,7 +412,6 @@ const PUBLIC_HOLIDAYS = [
   "2026-12-16", // Day of Reconciliation
   "2026-12-25"  // Christmas Day
 ];
-const auth = getAuth();
   
   // ----------------- SCREEN NAVIGATION -----------------
 function showScreen(id, step) {
@@ -1077,6 +1076,8 @@ function updateBookingStatus(id, status) {
       if (err.message !== "Not admin") alert("❌ Permission denied");
     });
 }
+
+const auth = getAuth();
 
 function adminLogin() {
   const email = document.getElementById("adminEmail").value.trim();
