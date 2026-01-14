@@ -397,9 +397,20 @@ input:focus, select:focus {
   animation: shake 0.45s ease;
 }
 
-#dailySummary .style-card {
-  background: #e6fff0;
-  border-left: 5px solid #27AE60;
+#dailySummary {
+  background: linear-gradient(135deg, #fff, #fdf6f0);
+  padding: 18px;
+  border-radius: 18px;
+  margin-bottom: 20px;
+  box-shadow: 0 8px 22px var(--lux-shadow);
+}
+
+  #reminderLogs div {
+  background: #fffaf6;
+  padding: 10px 14px;
+  border-radius: 10px;
+  margin-bottom: 6px;
+  font-size: 13px;
 }
 
 .booking-buttons {
@@ -409,7 +420,7 @@ input:focus, select:focus {
   flex-wrap: wrap;
 }
 
-  .status-buttons {
+.status-buttons {
     display: flex;
 }
 
@@ -439,14 +450,57 @@ input:focus, select:focus {
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
   font-size: 14px;
 }
+
+  .booking-card {
+  background: white;
+  padding: 18px;
+  border-radius: 18px;
+  margin-bottom: 16px;
+  box-shadow: 0 12px 30px var(--lux-shadow);
+  position: relative;
+}
+
+.booking-card::after {
+  content: "";
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+  .booking-card.pending::after {
+  background: #F1C40F;
+}
+
+.booking-card.accepted::after {
+  background: #27AE60;
+}
+
+.booking-card.declined::after {
+  background: #E74C3C;
+}
+
   
 .booking-card.pending { border-left: 5px solid #F1C40F; background-color: #fff9e6; }
 .booking-card.accepted { border-left: 5px solid #27AE60; background-color: #e6fff0; }
 .booking-card.declined { border-left: 5px solid #E74C3C; background-color: #ffe6e6; }
 
-.booking-card button { margin: 5px 5px 0 0; width: 48%; }
-.button.accept { background-color: #4CAF50; }
-.button.decline { background-color: #E74C3C; }
+.booking-card button {
+  border-radius: 12px;
+  font-size: 14px;
+  padding: 10px;
+}
+
+.button.accept {
+  background: linear-gradient(135deg, #6FCF97, #27AE60);
+}
+
+.button.decline {
+  background: linear-gradient(135deg, #EB5757, #C0392B);
+}
+
   /* Ensure modal content stacks cleanly */
 
   .modal-content {
@@ -520,7 +574,31 @@ input:focus, select:focus {
   padding-right: 45px;
 }
 
-  
+  #admin {
+  max-width: 1000px;
+  margin: auto;
+  padding: 30px 20px;
+}
+
+  #admin h2 {
+  text-align: center;
+  font-size: 28px;
+  margin-bottom: 20px;
+}
+
+#admin button.decline {
+  max-width: 160px;
+  margin: auto;
+  display: block;
+}
+
+  #clearAllBtn {
+  background: linear-gradient(135deg, #c0392b, #962d22);
+  border-radius: 14px;
+  font-weight: bold;
+  box-shadow: 0 10px 25px rgba(192,57,43,0.4);
+}
+ 
 </style>
 </head>
 
