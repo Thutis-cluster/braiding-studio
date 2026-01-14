@@ -179,78 +179,54 @@ body {
 
   /* Admin Login / Professional Form */
 #adminLogin {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  max-width: 400px;
+  max-width: 380px;
   margin: 50px auto;
   padding: 30px;
-  background-color: #fff5f0;
-  border-radius: 15px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  text-align: center;
+  background: #fff5f0;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 #adminLogin h2 {
-  font-size: 28px;
-  margin-bottom: 15px;
-  color: #4b2e2e;
+  text-align: center;
+  margin-bottom: 20px;
+  color: #4b3f36;
 }
 
 #adminLogin input {
-  width: 100%;
-  padding: 12px 15px;
+  display: block;       /* stack inputs vertically */
+  width: 100%;          /* full width */
+  padding: 12px;
   margin-bottom: 15px;
-  border: 1px solid #e0cfc1;
-  border-radius: 8px;
-  font-size: 14px;
-  outline: none;
-  transition: all 0.3s ease;
+  border-radius: 6px;
+  border: 1px solid #e0d5cc;
+  font-size: 16px;
 }
 
-#adminLogin input:focus {
-  border-color: #d2996c;
-  box-shadow: 0 0 6px rgba(210,153,108,0.5);
-}
-
-#adminLogin .button {
+#adminLogin button {
   width: 100%;
   padding: 12px;
-  margin-bottom: 12px;
-  font-size: 16px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  background-color: #d2996c;
+  margin-bottom: 10px;
+  background: #f5b7a3;
   color: white;
-  font-weight: bold;
-  transition: background 0.3s ease;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
 }
 
-#adminLogin .button:hover {
-  background-color: #b77a4e;
+#adminLogin button:hover {
+  opacity: 0.9;
 }
 
 #adminLogin .forgot-password {
-  margin-top: 10px;
-  font-size: 13px;
-  color: #d2996c;
-  text-decoration: underline;
+  display: block;
+  text-align: center;
+  margin-top: 8px;
+  color: #6a4dfd;
   cursor: pointer;
-  transition: color 0.3s ease;
+  text-decoration: underline;
 }
-
-#adminLogin .forgot-password:hover {
-  color: #b77a4e;
-}
-
-#adminLogin .error {
-  color: #E74C3C;
-  font-size: 13px;
-  margin-top: 5px;
-}
-
 
 #dailySummary .style-card {
   background: #e6fff0;
