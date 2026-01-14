@@ -641,6 +641,18 @@ input:focus, select:focus {
     <button class="button" onclick="selectStyle('Knotless Braids')">Select</button>
   </div>
 
+   <div class="style-card">
+    <img src="images/IMG-20251228-WA0018.jpg" alt="Knotless Braids">
+    <p><strong>CornRows</strong></p>
+    <button class="button" onclick="selectStyle('CornRows')">Select</button>
+  </div>
+
+ <div class="style-card">
+    <img src="images/IMG-20251228-WA0018.jpg" alt="Knotless Braids">
+    <p><strong>Ben & Betty</strong></p>
+    <button class="button" onclick="selectStyle('Ben & Betty')">Select</button>
+  </div>
+  
   <button class="button" onclick="showScreen('home',1)">Back</button>
 </div>
   
@@ -754,8 +766,6 @@ input:focus, select:focus {
      <p id="adminLoginError" class="error"></p>
   </div>
 </div>
-
-
   
 <div id="admin" class="screen">
   <button class="button decline" onclick="adminLogout()">🚪 Logout</button>
@@ -770,7 +780,6 @@ input:focus, select:focus {
 </div>
 
 <script>
-
   // ----------------- FIREBASE -----------------
   console.log("🔥 THIS IS THE SCRIPT RUNNING");
 
@@ -868,8 +877,10 @@ function getHourFromTime(timeStr) {
 }
 
 const prices = {
-  "Box Braids": { Short: 180, Medium: 220, Long: 260 },
-  "Knotless Braids": { Short: 200, Medium: 250, Long: 300 }
+  "Box Braids": { Short: 200, Medium: 300, Large: 500 },
+  "Knotless Braids": { Short: 180, Medium: 200, Long: 250 },
+  "CornRows": { Simple: 50 },
+  "Ben & Betty": { 20 }
 };
 
 const times = {
@@ -968,7 +979,6 @@ const booking = {
   status: "Pending",
   createdAt: firebase.firestore.FieldValue.serverTimestamp()
 };
-
 
   db.collection("bookings").add(booking)
     .then((docRef) => {
