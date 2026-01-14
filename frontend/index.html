@@ -177,92 +177,147 @@ body {
   display: none;
 }
 
-/* Modal Overlay */
+/* Modal overlay */
 .modal {
-  display: none; /* hidden by default */
-  position: fixed; /* stay in place */
-  z-index: 1000; /* above everything */
+  display: none;
+  position: fixed;
+  z-index: 1000;
   left: 0;
   top: 0;
   width: 100%;
   height: 100%;
-  overflow: auto; /* scroll if needed */
-  background-color: rgba(0,0,0,0.5); /* semi-transparent background */
-  opacity: 0;
+  background-color: rgba(75, 63, 54, 0.7); /* soft transparent brown */
+  backdrop-filter: blur(4px); /* glassy feel */
   transition: opacity 0.3s ease;
 }
 
-/* Show modal (fade-in) */
 .modal.show {
   display: block;
-  opacity: 1;
+  animation: fadeInSlide 0.4s ease;
 }
 
-/* Modal Content Box */
+@keyframes fadeInSlide {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Modal content box */
 .modal-content {
-  background-color: #fff5f0;
-  margin: 80px auto; /* center vertically with some space */
-  padding: 30px 20px;
-  border-radius: 12px;
-  max-width: 380px;
+  background: #fff5f0; /* soft cream */
+  margin: 80px auto;
+  padding: 30px 25px;
+  border-radius: 20px; /* luxury rounded corners */
+  max-width: 400px;
   width: 90%;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.25);
-  position: relative;
   text-align: center;
-  transform: translateY(-30px);
-  transition: transform 0.3s ease;
+  box-shadow: 0 12px 35px rgba(75,63,54,0.3); /* soft shadow */
+  position: relative;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* Animate modal content on show */
-.modal.show .modal-content {
-  transform: translateY(0);
-}
-
-/* Close Button (X) */
+/* Close button */
 .modal-content .close {
   position: absolute;
-  top: 10px;
-  right: 15px;
-  color: #c0392b;
-  font-size: 24px;
+  top: 12px;
+  right: 18px;
+  font-size: 28px;
   font-weight: bold;
+  color: #f5b7a3; /* soft pink */
   cursor: pointer;
+  transition: color 0.2s;
+}
+.modal-content .close:hover {
+  color: #e0816f; /* darker pink on hover */
 }
 
-/* Inputs & Buttons inside modal */
+/* Modal heading */
+.modal-content h2 {
+  font-family: 'Georgia', serif;
+  color: #4b3f36;
+  margin-bottom: 20px;
+  font-size: 24px;
+}
+
+/* Inputs */
 .modal-content input {
   display: block;
   width: 100%;
-  padding: 12px;
-  margin: 10px 0;
-  border-radius: 6px;
-  border: 1px solid #e0d5cc;
+  margin: 12px 0;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid #f5b7a3;
   font-size: 16px;
+  background-color: #fffaf5;
+  transition: border 0.2s, box-shadow 0.2s;
+}
+.modal-content input:focus {
+  outline: none;
+  border: 2px solid #f5b7a3;
+  box-shadow: 0 0 8px rgba(245,183,163,0.4);
 }
 
+/* Buttons */
 .modal-content .button {
   width: 100%;
-  padding: 12px;
-  margin: 10px 0;
-  background: #f5b7a3;
-  color: white;
+  padding: 14px;
+  margin-top: 12px;
+  background: linear-gradient(145deg, #f5b7a3, #f29c86);
+  color: #fff;
   border: none;
-  border-radius: 6px;
+  border-radius: 12px;
   font-size: 16px;
+  font-weight: bold;
   cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
-
 .modal-content .button:hover {
-  opacity: 0.9;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(245,183,163,0.4);
 }
 
+/* Forgot password */
 .modal-content .forgot-password {
   display: block;
-  margin-top: 5px;
-  color: #6a4dfd;
-  cursor: pointer;
+  margin-top: 10px;
+  color: #d17f5e;
+  font-size: 14px;
   text-decoration: underline;
+  cursor: pointer;
+  transition: color 0.2s;
 }
+.modal-content .forgot-password:hover {
+  color: #e0816f;
+}
+
+/* Error text */
+.modal-content .error {
+  color: #c0392b;
+  font-size: 13px;
+  margin: 6px 0 10px 0;
+  text-align: left;
+}
+
+  /* Modal pop/bounce animation */
+@keyframes popIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.8) translateY(-20px);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.05) translateY(5px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Apply animation to modal content when modal is shown */
+.modal.show .modal-content {
+  animation: popIn 0.5s ease forwards;
+}
+
 
 /* Responsive modal for mobile */
 @media (max-width: 500px) {
@@ -271,82 +326,24 @@ body {
     padding: 20px 15px;
   }
 }
+
+  /* Shake animation */
+@keyframes shake {
+  0% { transform: translateX(0); }
+  15% { transform: translateX(-6px); }
+  30% { transform: translateX(6px); }
+  45% { transform: translateX(-6px); }
+  60% { transform: translateX(6px); }
+  75% { transform: translateX(-3px); }
+  100% { transform: translateX(0); }
+}
+
+/* Apply shake */
+.modal-content.shake {
+  animation: shake 0.45s ease;
+}
+
   
-  /* Admin Login / Professional Form */
-/* Admin Login / Professional Form */
-#adminLogin {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  max-width: 400px;
-  margin: 50px auto;
-  padding: 30px;
-  background-color: #fff5f0;
-  border-radius: 15px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  text-align: center;
-}
-
-#adminLogin h2 {
-  font-size: 28px;
-  margin-bottom: 15px;
-  color: #4b2e2e;
-}
-
-#adminLogin input {
-  width: 100%;
-  padding: 12px 15px;
-  margin-bottom: 15px;
-  border: 1px solid #e0cfc1;
-  border-radius: 8px;
-  font-size: 14px;
-  outline: none;
-  transition: all 0.3s ease;
-}
-
-#adminLogin input:focus {
-  border-color: #d2996c;
-  box-shadow: 0 0 6px rgba(210,153,108,0.5);
-}
-
-#adminLogin .button {
-  width: 100%;
-  padding: 12px;
-  margin-bottom: 12px;
-  font-size: 16px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  background-color: #d2996c;
-  color: white;
-  font-weight: bold;
-  transition: background 0.3s ease;
-}
-
-#adminLogin .button:hover {
-  background-color: #b77a4e;
-}
-
-#adminLogin .forgot-password {
-  margin-top: 10px;
-  font-size: 13px;
-  color: #d2996c;
-  text-decoration: underline;
-  cursor: pointer;
-  transition: color 0.3s ease;
-}
-
-#adminLogin .forgot-password:hover {
-  color: #b77a4e;
-}
-
-#adminLogin .error {
-  color: #E74C3C;
-  font-size: 13px;
-  margin-top: 5px;
-}
-
 #dailySummary .style-card {
   background: #e6fff0;
   border-left: 5px solid #27AE60;
@@ -388,6 +385,80 @@ body {
 .booking-card button { margin: 5px 5px 0 0; width: 48%; }
 .button.accept { background-color: #4CAF50; }
 .button.decline { background-color: #E74C3C; }
+  /* Ensure modal content stacks cleanly */
+
+  .modal-content {
+  display: block;
+  box-sizing: border-box;
+}
+
+  /* Fix overlapping inputs */
+.modal-content input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 14px 0;
+  padding: 14px 16px;
+  line-height: 1.4;
+  min-height: 48px;
+}
+
+  .modal-content * {
+  box-sizing: border-box;
+}
+
+  @media (max-width: 480px) {
+  .modal-content {
+    margin: 40px auto;
+    padding: 22px 18px;
+  }
+
+  .modal-content h2 {
+    font-size: 20px;
+  }
+
+  .modal-content input {
+    font-size: 15px;
+    padding: 12px 14px;
+  }
+
+  .modal-content .button {
+    font-size: 15px;
+    padding: 12px;
+  }
+}
+
+.modal-content .error {
+  display: block;
+  margin-top: 6px;
+  margin-bottom: 10px;
+  min-height: 16px; /* prevents jump */
+}
+
+/* Password field wrapper */
+.password-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+/* Eye icon */
+.toggle-password {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 18px;
+  color: #c08a6a;
+  user-select: none;
+}
+
+/* Prevent input text from going under the icon */
+.password-wrapper input {
+  padding-right: 45px;
+}
+
+  
 </style>
 </head>
 
@@ -535,15 +606,17 @@ body {
     <h2>🔐 Owner Login</h2>
 
     <input type="email" id="adminEmail" placeholder="Admin Email">
-    <input type="password" id="adminPassword" placeholder="Password">
+   <div class="password-wrapper">
+  <input type="password" id="adminPassword" placeholder="Password">
+  <span class="toggle-password" onclick="toggleAdminPassword()">👁️</span>
+  </div>
 
     <button class="button" onclick="adminLogin()">Login</button>
-    <p class="forgot-password" onclick="forgotAdminPassword()">
-      🔑 Forgot password?
-    </p>
-      <p id="adminLoginError" class="error"></p>
+    <p class="forgot-password" onclick="forgotAdminPassword()">🔑 Forgot password?</p>
+     <p id="adminLoginError" class="error"></p>
   </div>
 </div>
+
 
   
 <div id="admin" class="screen">
@@ -1267,24 +1340,37 @@ function updateBookingStatus(id, status) {
     });
 }
 
-  // Show the modal with fade-in
-document.getElementById('adminBtn').addEventListener('click', () => {
-  const modal = document.getElementById('adminLoginModal');
-  modal.classList.add('show');
+// Open modal when admin button clicked
+// ------------------ Show modal when admin button is clicked ------------------
+document.getElementById("adminBtn").addEventListener("click", () => {
+  showAdminModal();
 });
 
-// Close modal function
-function closeAdminLogin() {
-  const modal = document.getElementById('adminLoginModal');
-  modal.classList.remove('show');
+// ------------------ Show modal function ------------------
+function showAdminModal() {
+  const modal = document.getElementById("adminLoginModal");
+  modal.classList.add("show");
+
+  // Clicking outside closes the modal
+  modal.addEventListener("click", function onOutsideClick(e) {
+    if (e.target === modal) {
+      hideAdminModal();
+      modal.removeEventListener("click", onOutsideClick);
+    }
+  });
 }
 
-// Close modal if user clicks outside modal content
-window.onclick = function(event) {
-  const modal = document.getElementById('adminLoginModal');
-  if (event.target === modal) {
-    modal.classList.remove('show');
-  }
+// ------------------ Hide modal function ------------------
+function hideAdminModal() {
+  const modal = document.getElementById("adminLoginModal");
+  modal.classList.remove("show");
+}
+
+// ------------------ Hide modal after successful login ------------------
+function onAdminLoginSuccess() {
+  hideAdminModal();  // hide modal
+  showScreen("admin", 5); 
+  openAdmin();       // open admin panel
 }
 
 function adminLogin() {
@@ -1295,28 +1381,29 @@ function adminLogin() {
   errorEl.textContent = "";
 
   auth.signInWithEmailAndPassword(email, password)
-    .then(({ user }) => {
-
-      // 🔒 Check admin role in Firestore
-      return db.collection("admins").doc(user.uid).get();
-
-    })
+    .then(({ user }) => db.collection("admins").doc(user.uid).get())
     .then(doc => {
       if (!doc.exists || doc.data().role !== "admin") {
         alert("⛔ Not authorized as admin");
         auth.signOut();
-        showScreen("home", 1);
         return;
       }
 
-      // ✅ Authorized admin
+      // ✅ Successful login
       document.getElementById("adminBtn").style.display = "block";
+      hideAdminModal();   // <-- hide modal
       showScreen("admin", 5);
       openAdmin();
     })
-    .catch(err => {
-      errorEl.textContent = "❌ Login failed: " + err.message;
-    });
+.catch(err => {
+  errorEl.textContent = "❌ Login failed: " + err.message;
+
+  // Shake modal on error
+  const modalBox = document.querySelector(".modal-content");
+  modalBox.classList.remove("shake"); // reset
+  void modalBox.offsetWidth;          // force reflow
+  modalBox.classList.add("shake");
+});
 }
 
 function forgotAdminPassword() {
@@ -1368,6 +1455,19 @@ auth.onAuthStateChanged(user => {
       showScreen("home", 1);
     });
 });
+
+  function toggleAdminPassword() {
+  const passwordInput = document.getElementById("adminPassword");
+  const icon = document.querySelector(".toggle-password");
+
+  if (passwordInput.type === "password") {
+    passwordInput.type = "text";
+    icon.textContent = "🙈";
+  } else {
+    passwordInput.type = "password";
+    icon.textContent = "👁️";
+  }
+}
 
 function adminLogout() {
   auth.signOut().then(() => {
