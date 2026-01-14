@@ -177,6 +177,101 @@ body {
   display: none;
 }
 
+/* Modal Overlay */
+.modal {
+  display: none; /* hidden by default */
+  position: fixed; /* stay in place */
+  z-index: 1000; /* above everything */
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto; /* scroll if needed */
+  background-color: rgba(0,0,0,0.5); /* semi-transparent background */
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+/* Show modal (fade-in) */
+.modal.show {
+  display: block;
+  opacity: 1;
+}
+
+/* Modal Content Box */
+.modal-content {
+  background-color: #fff5f0;
+  margin: 80px auto; /* center vertically with some space */
+  padding: 30px 20px;
+  border-radius: 12px;
+  max-width: 380px;
+  width: 90%;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+  position: relative;
+  text-align: center;
+  transform: translateY(-30px);
+  transition: transform 0.3s ease;
+}
+
+/* Animate modal content on show */
+.modal.show .modal-content {
+  transform: translateY(0);
+}
+
+/* Close Button (X) */
+.modal-content .close {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  color: #c0392b;
+  font-size: 24px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+/* Inputs & Buttons inside modal */
+.modal-content input {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  margin: 10px 0;
+  border-radius: 6px;
+  border: 1px solid #e0d5cc;
+  font-size: 16px;
+}
+
+.modal-content .button {
+  width: 100%;
+  padding: 12px;
+  margin: 10px 0;
+  background: #f5b7a3;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.modal-content .button:hover {
+  opacity: 0.9;
+}
+
+.modal-content .forgot-password {
+  display: block;
+  margin-top: 5px;
+  color: #6a4dfd;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* Responsive modal for mobile */
+@media (max-width: 500px) {
+  .modal-content {
+    margin: 40px 15px;
+    padding: 20px 15px;
+  }
+}
+  
   /* Admin Login / Professional Form */
 #adminLogin {
   max-width: 380px;
@@ -409,20 +504,23 @@ body {
   <button class="button" onclick="showScreen('home',1)">Done</button>
 </div>
 
-<div id="adminLogin" class="screen">
-  <h2>🔐 Owner Login</h2>
+  <!-- Admin Login Modal -->
+<div id="adminLoginModal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeAdminLogin()">&times;</span>
+    <h2>🔐 Owner Login</h2>
 
-  <input type="email" id="adminEmail" placeholder="Admin Email">
-  <input type="password" id="adminPassword" placeholder="Password">
+    <input type="email" id="adminEmail" placeholder="Admin Email">
+    <input type="password" id="adminPassword" placeholder="Password">
 
-  <button class="button" onclick="adminLogin()">Login</button>
-  <p class="forgot-password" onclick="forgotAdminPassword()">
-  🔑 Forgot password?
-</p>
-  <button class="button" onclick="showScreen('home',1)">Back</button>
-
-  <p id="adminLoginError" class="error"></p>
+    <button class="button" onclick="adminLogin()">Login</button>
+    <p class="forgot-password" onclick="forgotAdminPassword()">
+      🔑 Forgot password?
+    </p>
+      <p id="adminLoginError" class="error"></p>
+  </div>
 </div>
+
   
 <div id="admin" class="screen">
   <button class="button decline" onclick="adminLogout()">🚪 Logout</button>
@@ -1143,6 +1241,26 @@ function updateBookingStatus(id, status) {
       console.error("Error updating booking:", err);
       if (err.message !== "Not admin") alert("❌ Permission denied");
     });
+}
+
+  // Show the modal with fade-in
+document.getElementById('adminBtn').addEventListener('click', () => {
+  const modal = document.getElementById('adminLoginModal');
+  modal.classList.add('show');
+});
+
+// Close modal function
+function closeAdminLogin() {
+  const modal = document.getElementById('adminLoginModal');
+  modal.classList.remove('show');
+}
+
+// Close modal if user clicks outside modal content
+window.onclick = function(event) {
+  const modal = document.getElementById('adminLoginModal');
+  if (event.target === modal) {
+    modal.classList.remove('show');
+  }
 }
 
 function adminLogin() {
