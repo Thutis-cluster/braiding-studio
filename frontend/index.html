@@ -1364,7 +1364,8 @@ function sendWhatsAppBooking(booking, method) {
 }
 
   function sendSMS(phone, message) {
-    fetch("http://localhost:3000/sendSMS", { // Replace with your live server URL in production
+fetch("https://us-central1-mumsy-braids-booking.cloudfunctions.net/sendSMS", {
+// Replace with your live server URL in production
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone, message })
@@ -1395,7 +1396,7 @@ function sendSmsToClient(booking, messageIntro = "") {
                   `Cancellation: 24h notice required`;
 
   // Send request to your server to trigger Twilio SMS
-  fetch("http://localhost:3000/sendSMS", {
+fetch("https://us-central1-mumsy-braids-booking.cloudfunctions.net/sendSMS", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ phone, message })
