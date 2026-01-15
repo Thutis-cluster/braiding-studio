@@ -1447,6 +1447,27 @@ function sendReminderIfDue(booking) {
     }
 }
 
+          // ----------------- CLIENT NOTIFICATION (WHATSAPP → SMS FALLBACK) -----------------
+function notifyClientWithFallback(booking, message) {
+  if (booking.method === "whatsapp") {
+    try {
+      sendWhatsAppToClient(booking, message);
+
+      // ⏱️ fallback to SMS after 5 seconds
+      setTimeout(() => {
+        sendSmsToClient(booking, message);
+      }, 5000);
+
+    } catch (err) {
+      // If WhatsApp fails immediately
+      sendSmsToClient(booking, message);
+    }
+  } else {
+    // Client chose SMS
+    sendSmsToClient(booking, message);
+  }
+}
+
 // ----------------- STATUS UPDATE -----------------
 function updateBookingStatus(id, status) {
   if (!auth.currentUser) {
@@ -1476,8 +1497,11 @@ function updateBookingStatus(id, status) {
         const booking = doc.data();
         booking.id = id;
         booking.status = status;
-        if (booking.method === "sms") sendSmsToClient(booking, `✅ Your booking status is now: ${status}!!`);
-        else sendWhatsAppToClient(booking, `✅ Your booking status is now: ${status}!!`);
+notifyClientWithFallback(
+  booking,
+  `✅ Your booking status is now: ${status}!`
+);
+
       });
     })
     
