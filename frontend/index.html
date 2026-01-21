@@ -1848,7 +1848,7 @@ auth.onAuthStateChanged(user => {
   const adminBtn = document.getElementById("adminBtn");
 
   if (!user) {
-    adminBtn.style.display = "none";
+    adminBtn.style.display = "block";
     return;
   }
 
@@ -1858,13 +1858,13 @@ auth.onAuthStateChanged(user => {
       if (doc.exists && doc.data().role === "admin") {
         adminBtn.style.display = "block";
       } else {
-        adminBtn.style.display = "none";
+        adminBtn.style.display = "block";
         auth.signOut();
         showScreen("home", 1);
       }
     })
     .catch(() => {
-      adminBtn.style.display = "none";
+      adminBtn.style.display = "block;
       auth.signOut();
       showScreen("home", 1);
     });
