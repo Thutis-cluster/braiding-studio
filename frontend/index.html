@@ -912,7 +912,11 @@ function getHourFromTime(timeStr) {
 
 const prices = {
   "Box Braids": { Short: 200, Medium: 300, Large: 500 },
-  "Knotless Braids": { Short: 180, Medium: 200, Long: 250 }
+  "Knotless Braids": { Short: 180, Medium: 200, Long: 250 },
+  
+  // NEW
+  "CornRows": { Simple: 50 },
+  "Ben & Betty": { Simple: 20 }
 };
 
 const times = {
@@ -925,7 +929,11 @@ const times = {
     Short: "1.1 – 1.2 hours",
     Medium: "1.2 – 1.2 hours",
     Long: "1.2 – 1.4 hours"
-  }
+  },
+  
+  // NEW
+  "CornRows": { Simple: "30 minutes" },
+  "Ben & Betty": { Simple: "20 minutes" }
 };
   
   function formatPhoneForWhatsApp(phone) {
@@ -945,25 +953,71 @@ const times = {
 function selectStyle(style) {
   selectedStyle = style;
 
-  // Update price spans
-  document.getElementById('shortPrice').textContent = prices[style].Short;
-  document.getElementById('mediumPrice').textContent = prices[style].Medium;
-  document.getElementById('longPrice').textContent = prices[style].Long;
+  const cards = document.querySelectorAll("#length .style-card");
+  const shortCard = cards[0];
+  const mediumCard = cards[1];
+  const longCard = cards[2];
 
-  // Update time spans
-  document.getElementById('shortTime').textContent = times[style].Short;
-  document.getElementById('mediumTime').textContent = times[style].Medium;
-  document.getElementById('longTime').textContent = times[style].Long;
+  // Reset visibility
+  mediumCard.style.display = "block";
+  longCard.style.display = "block";
 
-  // Automatically show the length screen
-  showScreen('length', 3);
+  // ===== CORNROWS & BEN & BETTY =====
+  if (style === "CornRows" || style === "Ben & Betty") {
+    shortCard.querySelector("strong").textContent = "Simple";
+    document.getElementById("shortPrice").textContent = prices[style].Simple;
+    document.getElementById("shortTime").textContent = times[style].Simple;
+
+    mediumCard.style.display = "none";
+    longCard.style.display = "none";
+  }
+
+  // ===== BOX BRAIDS =====
+  else if (style === "Box Braids") {
+    shortCard.querySelector("strong").textContent = "Small";
+    mediumCard.querySelector("strong").textContent = "Medium";
+    longCard.querySelector("strong").textContent = "Large";
+
+    document.getElementById("shortPrice").textContent = prices[style].Short;
+    document.getElementById("mediumPrice").textContent = prices[style].Medium;
+    document.getElementById("longPrice").textContent = prices[style].Long;
+
+    document.getElementById("shortTime").textContent = times[style].Short;
+    document.getElementById("mediumTime").textContent = times[style].Medium;
+    document.getElementById("longTime").textContent = times[style].Long;
+  }
+
+  // ===== ALL OTHER STYLES =====
+  else {
+    shortCard.querySelector("strong").textContent = "Short";
+    mediumCard.querySelector("strong").textContent = "Medium";
+    longCard.querySelector("strong").textContent = "Long";
+
+    document.getElementById("shortPrice").textContent = prices[style].Short;
+    document.getElementById("mediumPrice").textContent = prices[style].Medium;
+    document.getElementById("longPrice").textContent = prices[style].Long;
+
+    document.getElementById("shortTime").textContent = times[style].Short;
+    document.getElementById("mediumTime").textContent = times[style].Medium;
+    document.getElementById("longTime").textContent = times[style].Long;
+  }
+
+  showScreen("length", 3);
 }
 
 function selectLength(length) {
   selectedLength = length;
-  selectedPrice = prices[selectedStyle][length];
-  selectedTimeEstimate = times[selectedStyle][length];
-  showScreen('date', 4);
+
+  if (selectedStyle === "CornRows" || selectedStyle === "Ben & Betty") {
+    selectedLength = "Simple";
+    selectedPrice = prices[selectedStyle].Simple;
+    selectedTimeEstimate = times[selectedStyle].Simple;
+  } else {
+    selectedPrice = prices[selectedStyle][length];
+    selectedTimeEstimate = times[selectedStyle][length];
+  }
+
+  showScreen("date", 4);
 }
 
   function handleDateSelection() {
