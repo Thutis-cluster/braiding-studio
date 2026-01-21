@@ -725,11 +725,11 @@ input:focus, select:focus {
 
 
   <button class="button" onclick="showScreen('date',4)">Back</button>
-<button class="button submit-btn" onclick="confirmBooking('sms')">
+<button class="button submit-btn" onclick="handleBooking()">
   ✅ Confirm Booking (SMS)
 </button>
 
-<button class="button submit-btn" onclick="confirmBooking('whatsapp')">
+<button class="button submit-btn" onclick="handleBooking()">
   📱 Send Booking on WhatsApp
 </button>
 
@@ -847,10 +847,13 @@ function handleBooking() {
   if (selectedPrice >= DEPOSIT_THRESHOLD) {
     payDeposit();
   } else {
-    saveBooking({ paymentStatus: "No Deposit Required" });
+    saveBooking({
+      paymentStatus: "No Deposit Required",
+      depositPaid: 0,
+      balanceRemaining: selectedPrice
+    });
   }
 }
-
   
   // ----------------- SCREEN NAVIGATION -----------------
 function showScreen(id, step) {
@@ -990,7 +993,7 @@ function selectLength(length) {
 }
 
 // ----------------- SAVE BOOKING -----------------
-function saveBookingToFirebase() {
+/*------ function saveBookingToFirebase() {
 const booking = {
   style: selectedStyle,
   length: selectedLength,
@@ -1015,7 +1018,7 @@ const booking = {
       sendWhatsAppToClient(booking, "Thank you for your booking! Your appointment is pending confirmation.");
     })
     .catch(err => alert("Error saving booking. Check Firestore rules: "+err));
-}
+} ----*/
 
 function changeMonth(direction) {
   const calendar = document.getElementById("calendar");
@@ -1225,8 +1228,6 @@ document.getElementById("cBalance").textContent =
 
 document.getElementById("cPaymentStatus").textContent =
   booking.paymentStatus;
-
-
 }
 
 function validateClientForm() {
@@ -1253,7 +1254,7 @@ function validateClientForm() {
   });
 }
 
-  function saveBookingWithoutPayment() {
+/*------ function saveBookingWithoutPayment() {
   const booking = {
     style: selectedStyle,
     length: selectedLength,
@@ -1290,7 +1291,7 @@ function validateClientForm() {
       alert("❌ Error saving booking.");
       console.error(err);
     });
-}
+}  ------*/
 
 function payDeposit() {
   const email =
@@ -1299,19 +1300,14 @@ function payDeposit() {
   const deposit = getDeposit(selectedPrice);
 
   PaystackPop.setup({
-    key: "pk_test_xxxxxxxxxxxxxxxxxxxx", // 🔴 YOUR PAYSTACK PUBLIC KEY
+    key: "pk_live_xxxxxxxxxxxxxx", // 🔒 LIVE PUBLIC KEY
     email: email,
-    amount: deposit * 100, // kobo
+    amount: deposit * 100,
     currency: "ZAR",
     ref: "MUMSY_" + Date.now(),
 
     callback: function (res) {
-      saveBooking({
-        paymentStatus: "Deposit Paid",
-        depositPaid: deposit,
-        balanceRemaining: getBalance(selectedPrice),
-        paymentReference: res.reference
-      });
+      verifyPaystackPayment(res.reference, deposit);
     },
 
     onClose: function () {
@@ -1363,8 +1359,44 @@ function payDeposit() {
       alert("❌ Failed to save booking.");
     });
 }
+
+function verifyPaystackPayment(reference, deposit) {
+  const booking = {
+    style: selectedStyle,
+    length: selectedLength,
+    price: selectedPrice,
+    timeEstimate: selectedTimeEstimate,
+    depositPaid: deposit,
+    balanceRemaining: getBalance(selectedPrice),
+
+    clientName: document.getElementById("clientName").value,
+    clientPhone: document.getElementById("clientPhone").value,
+    clientEmail: document.getElementById("clientEmail").value,
+    date: document.getElementById("clientDate").value,
+    time: document.getElementById("clientTime").value,
+    status: "Pending"
+  };
+
+  fetch("https://us-central1-mumsy-braids-booking.cloudfunctions.net/verifyPaystackPayment", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ reference, booking })
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (!data.success) throw new Error("Payment verification failed");
+
+      booking.id = data.bookingId;
+      localStorage.setItem("latestBooking", JSON.stringify(booking));
+      showScreen("confirmation", 5);
+    })
+    .catch(err => {
+      alert("❌ Payment verification failed.");
+      console.error(err);
+    });
+}
   
-function confirmBooking(method) {
+/*------ function confirmBooking(method) {
   if (isSubmitting) return; // prevent double submissions
   isSubmitting = true;
 
@@ -1434,7 +1466,7 @@ function confirmBooking(method) {
       alert("❌ Error saving booking: " + err);
       resetSubmitButtons();
     });
-}
+} ------ */
 
 function getMinutesFromEstimate(estimate) {
   // Example: "3 – 4 hours" → take MAX value
