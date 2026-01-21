@@ -1864,7 +1864,7 @@ auth.onAuthStateChanged(user => {
       }
     })
     .catch(() => {
-      adminBtn.style.display = "block;
+      adminBtn.style.display = "block";
       auth.signOut();
       showScreen("home", 1);
     });
