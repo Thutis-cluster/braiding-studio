@@ -11,6 +11,9 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
 
+<!---- Paystack SDKs ------>
+<script src="https://js.paystack.co/v1/inline.js"></script>
+
 <style>
 body {
   font-family: 'Poppins', sans-serif;
@@ -744,6 +747,9 @@ input:focus, select:focus {
   <p>Phone: <span id="cPhone"></span></p>
   <p>Email: <span id="cEmail"></span></p>
   <p>Status: <span id="cStatus"></span></p>
+  <p>Total: R<span id="cPrice"></span></p>
+  <p>Deposit Paid: R<span id="cDeposit"></span></p>
+  <p>Balance Due: R<span id="cBalance"></span></p>
   <p>Hair Prep: Wash & dry hair before appointment</p>
   <p>Cancellation: 24h notice required</p>
   <button class="button" onclick="showScreen('client',5)">Back</button>
@@ -825,6 +831,26 @@ const PUBLIC_HOLIDAYS = [
   "2026-12-16", // Day of Reconciliation
   "2026-12-25"  // Christmas Day
 ];
+
+const DEPOSIT_THRESHOLD = 100; // R100
+const DEPOSIT_PERCENT = 0.45;
+
+function getDeposit(price) {
+  return Math.round(price * DEPOSIT_PERCENT);
+}
+
+function getBalance(price) {
+  return price - getDeposit(price);
+}
+  
+function handleBooking() {
+  if (selectedPrice >= DEPOSIT_THRESHOLD) {
+    payDeposit();
+  } else {
+    saveBooking({ paymentStatus: "No Deposit Required" });
+  }
+}
+
   
   // ----------------- SCREEN NAVIGATION -----------------
 function showScreen(id, step) {
@@ -1191,6 +1217,16 @@ function displayConfirmation() {
   document.getElementById("cPhone").textContent = booking.clientPhone;
   document.getElementById("cEmail").textContent = booking.clientEmail;
   document.getElementById("cStatus").textContent = booking.status;
+document.getElementById("cDeposit").textContent =
+  booking.depositPaid || 0;
+
+document.getElementById("cBalance").textContent =
+  booking.balanceRemaining;
+
+document.getElementById("cPaymentStatus").textContent =
+  booking.paymentStatus;
+
+
 }
 
 function validateClientForm() {
@@ -1216,7 +1252,118 @@ function validateClientForm() {
     btn.disabled = !(nameValid && phoneValid && dateValid && timeValid);
   });
 }
- 
+
+  function saveBookingWithoutPayment() {
+  const booking = {
+    style: selectedStyle,
+    length: selectedLength,
+    price: selectedPrice,
+    depositPaid: 0,
+    balanceRemaining: selectedPrice,
+    paymentStatus: "No Deposit Required",
+    timeEstimate: selectedTimeEstimate,
+
+    clientName: document.getElementById("clientName").value,
+    clientPhone: document.getElementById("clientPhone").value,
+    clientEmail: document.getElementById("clientEmail").value,
+    date: document.getElementById("clientDate").value,
+    time: document.getElementById("clientTime").value,
+
+    status: "Pending",
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+
+  db.collection("bookings").add(booking)
+    .then(docRef => {
+      booking.id = docRef.id;
+      localStorage.setItem("latestBooking", JSON.stringify(booking));
+
+      sendWhatsAppToAdmin(booking);
+      sendWhatsAppToClient(
+        booking,
+        "✅ Booking confirmed. No deposit was required."
+      );
+
+      showScreen("confirmation", 5);
+    })
+    .catch(err => {
+      alert("❌ Error saving booking.");
+      console.error(err);
+    });
+}
+
+function payDeposit() {
+  const email =
+    document.getElementById("clientEmail").value || "customer@mumsybraids.com";
+
+  const deposit = getDeposit(selectedPrice);
+
+  PaystackPop.setup({
+    key: "pk_test_xxxxxxxxxxxxxxxxxxxx", // 🔴 YOUR PAYSTACK PUBLIC KEY
+    email: email,
+    amount: deposit * 100, // kobo
+    currency: "ZAR",
+    ref: "MUMSY_" + Date.now(),
+
+    callback: function (res) {
+      saveBooking({
+        paymentStatus: "Deposit Paid",
+        depositPaid: deposit,
+        balanceRemaining: getBalance(selectedPrice),
+        paymentReference: res.reference
+      });
+    },
+
+    onClose: function () {
+      alert("❌ Payment cancelled. Booking not completed.");
+    }
+  }).openIframe();
+}
+
+ function saveBooking(payment = {}) {
+  const booking = {
+    style: selectedStyle,
+    length: selectedLength,
+    price: selectedPrice,
+    timeEstimate: selectedTimeEstimate,
+
+    depositPaid: payment.depositPaid || 0,
+    balanceRemaining:
+      payment.balanceRemaining ?? selectedPrice,
+    paymentReference: payment.paymentReference || null,
+    paymentStatus: payment.paymentStatus,
+
+    clientName: document.getElementById("clientName").value,
+    clientPhone: document.getElementById("clientPhone").value,
+    clientEmail: document.getElementById("clientEmail").value,
+    date: document.getElementById("clientDate").value,
+    time: document.getElementById("clientTime").value,
+
+    status: "Pending",
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+
+  db.collection("bookings").add(booking)
+    .then(docRef => {
+      booking.id = docRef.id;
+      localStorage.setItem("latestBooking", JSON.stringify(booking));
+
+      sendWhatsAppToAdmin(booking);
+      sendWhatsAppToClient(
+        booking,
+        booking.paymentStatus === "Deposit Paid"
+          ? "✅ Deposit received! Your booking is pending confirmation."
+          : "✅ Booking confirmed. No deposit required."
+      );
+
+      showScreen("confirmation", 5);
+    })
+    .catch(err => {
+      console.error(err);
+      alert("❌ Failed to save booking.");
+    });
+}
+  
 function confirmBooking(method) {
   if (isSubmitting) return; // prevent double submissions
   isSubmitting = true;
