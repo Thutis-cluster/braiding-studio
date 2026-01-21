@@ -89,3 +89,56 @@ exports.sendFiveHourReminders = functions.pubsub
 
     return null;
   });
+
+// -------------------- PAYSTACK VERIFICATION --------------------
+
+const axios = require("axios");
+
+exports.verifyPaystackPayment = functions.https.onRequest(async (req, res) => {
+  try {
+    const { reference, booking } = req.body;
+
+    if (!reference || !booking) {
+      return res.status(400).json({ error: "Missing data" });
+    }
+
+    // 🔐 Verify with Paystack
+    const response = await axios.get(
+      `https://api.paystack.co/transaction/verify/${reference}`,
+      {
+        headers: {
+          Authorization: `Bearer ${functions.config().paystack.secret}`
+        }
+      }
+    );
+
+    const paystackData = response.data.data;
+
+    if (paystackData.status !== "success") {
+      return res.status(400).json({ error: "Payment not successful" });
+    }
+
+    // ✅ Save booking (server-trusted)
+    const docRef = await db.collection("bookings").add({
+      ...booking,
+
+      paymentStatus: "Deposit Paid",
+      depositPaid: booking.depositPaid,
+      balanceRemaining: booking.balanceRemaining,
+      paymentReference: reference,
+
+      verified: true,
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    return res.json({
+      success: true,
+      bookingId: docRef.id
+    });
+
+  } catch (err) {
+    console.error("Paystack verification error:", err);
+    return res.status(500).json({ error: "Verification failed" });
+  }
+});
+
