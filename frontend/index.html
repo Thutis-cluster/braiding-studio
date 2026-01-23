@@ -833,6 +833,8 @@ const PUBLIC_HOLIDAYS = [
 ];
 
 let paymentInProgress = false;
+let bookingMethod = null;
+
 
 const DEPOSIT_THRESHOLD = 100; // R100
 const DEPOSIT_PERCENT = 0.45;
@@ -1355,8 +1357,12 @@ function payDeposit() {
   if (paymentInProgress) return;
   paymentInProgress = true;
 
-  const email =
-    document.getElementById("clientEmail").value || "customer@mumsybraids.com";
+  document.querySelectorAll(".submit-btn").forEach(btn => {
+  btn.disabled = true;
+});
+
+const emailInput = document.getElementById("clientEmail").value.trim();
+const email = emailInput !== "" ? emailInput : "customer@mumsybraids.com";
 
   const deposit = getDeposit(selectedPrice);
 
@@ -1371,6 +1377,11 @@ function payDeposit() {
       paymentInProgress = false;
       verifyPaystackPayment(res.reference, deposit);
     },
+
+    callback: function (res) {
+  alert("Payment successful!");
+  console.log(res);
+}
 
     onClose: function () {
       paymentInProgress = false;
