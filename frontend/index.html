@@ -1373,10 +1373,16 @@ const email = emailInput !== "" ? emailInput : "customer@mumsybraids.com";
     currency: "ZAR",
     ref: "MUMSY_" + Date.now(),
 
-    callback: function (res) {
-      paymentInProgress = false;
-      verifyPaystackPayment(res.reference, deposit);
-    },
+callback: function (res) {
+  paymentInProgress = false;
+
+  saveBooking({
+    depositPaid: deposit,
+    balanceRemaining: getBalance(selectedPrice),
+    paymentReference: res.reference,
+    paymentStatus: "Deposit Paid"
+  });
+}
 
     onClose: function () {
       paymentInProgress = false;
