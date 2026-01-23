@@ -1358,36 +1358,39 @@ function payDeposit() {
   paymentInProgress = true;
 
   document.querySelectorAll(".submit-btn").forEach(btn => {
-  btn.disabled = true;
-});
+    btn.disabled = true;
+  });
 
-const emailInput = document.getElementById("clientEmail").value.trim();
-const email = emailInput !== "" ? emailInput : "customer@mumsybraids.com";
+  const emailInput = document.getElementById("clientEmail").value.trim();
+  const email = emailInput !== "" ? emailInput : "customer@mumsybraids.com";
 
   const deposit = getDeposit(selectedPrice);
 
-  PaystackPop.setup({
-    key: "pk_test_b509dd03ae654c59a3449ed06766fe904b500d0e", // 🔁 use TEST for now
-    email,
+  const handler = PaystackPop.setup({
+    key: "pk_test_b509dd03ae654c59a3449ed06766fe904b500d0e",
+    email: email,
     amount: deposit * 100,
     currency: "ZAR",
     ref: "MUMSY_" + Date.now(),
 
-callback: function (res) {
-  paymentInProgress = false;
+    callback: function (res) {
+      paymentInProgress = false;
 
-  saveBooking({
-    depositPaid: deposit,
-    balanceRemaining: getBalance(selectedPrice),
-    paymentReference: res.reference,
-    paymentStatus: "Deposit Paid"
-  });
+      saveBooking({
+        depositPaid: deposit,
+        balanceRemaining: getBalance(selectedPrice),
+        paymentReference: res.reference,
+        paymentStatus: "Deposit Paid"
+      });
+    },
 
     onClose: function () {
       paymentInProgress = false;
       alert("❌ Payment cancelled. Booking not completed.");
     }
-  }).openIframe();
+  });
+
+  handler.openIframe();
 }
   
  function saveBooking(payment = {}) {
@@ -1431,42 +1434,6 @@ callback: function (res) {
     .catch(err => {
       console.error(err);
       alert("❌ Failed to save booking.");
-    });
-}
-
-function verifyPaystackPayment(reference, deposit) {
-  const booking = {
-    style: selectedStyle,
-    length: selectedLength,
-    price: selectedPrice,
-    timeEstimate: selectedTimeEstimate,
-    depositPaid: deposit,
-    balanceRemaining: getBalance(selectedPrice),
-
-    clientName: document.getElementById("clientName").value,
-    clientPhone: document.getElementById("clientPhone").value,
-    clientEmail: document.getElementById("clientEmail").value,
-    date: document.getElementById("clientDate").value,
-    time: document.getElementById("clientTime").value,
-    status: "Pending"
-  };
-
-  fetch("https://us-central1-mumsy-braids-booking.cloudfunctions.net/verifyPaystackPayment", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ reference, booking })
-  })
-    .then(res => res.json())
-    .then(data => {
-      if (!data.success) throw new Error("Payment verification failed");
-
-      booking.id = data.bookingId;
-      localStorage.setItem("latestBooking", JSON.stringify(booking));
-      showScreen("confirmation", 5);
-    })
-    .catch(err => {
-      alert("❌ Payment verification failed.");
-      console.error(err);
     });
 }
   
