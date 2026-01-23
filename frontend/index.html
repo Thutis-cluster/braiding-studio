@@ -1393,18 +1393,12 @@ function payDeposit() {
   handler.openIframe();
 }
   
- function saveBooking(payment = {}) {
+ function saveBooking() {
   const booking = {
     style: selectedStyle,
     length: selectedLength,
     price: selectedPrice,
     timeEstimate: selectedTimeEstimate,
-
-    depositPaid: payment.depositPaid || 0,
-    balanceRemaining:
-      payment.balanceRemaining ?? selectedPrice,
-    paymentReference: payment.paymentReference || null,
-    paymentStatus: payment.paymentStatus,
 
     clientName: document.getElementById("clientName").value,
     clientPhone: document.getElementById("clientPhone").value,
@@ -1420,20 +1414,11 @@ function payDeposit() {
     .then(docRef => {
       booking.id = docRef.id;
       localStorage.setItem("latestBooking", JSON.stringify(booking));
-
-      sendWhatsAppToAdmin(booking);
-      sendWhatsAppToClient(
-        booking,
-        booking.paymentStatus === "Deposit Paid"
-          ? "✅ Deposit received! Your booking is pending confirmation."
-          : "✅ Booking confirmed. No deposit required."
-      );
-
       showScreen("confirmation", 5);
     })
     .catch(err => {
       console.error(err);
-      alert("❌ Failed to save booking.");
+      alert("❌ Failed to save booking");
     });
 }
   
