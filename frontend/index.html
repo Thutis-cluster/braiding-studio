@@ -1378,11 +1378,6 @@ const email = emailInput !== "" ? emailInput : "customer@mumsybraids.com";
       verifyPaystackPayment(res.reference, deposit);
     },
 
-    callback: function (res) {
-  alert("Payment successful!");
-  console.log(res);
-}
-
     onClose: function () {
       paymentInProgress = false;
       alert("❌ Payment cancelled. Booking not completed.");
