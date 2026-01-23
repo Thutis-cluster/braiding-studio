@@ -1382,7 +1382,6 @@ callback: function (res) {
     paymentReference: res.reference,
     paymentStatus: "Deposit Paid"
   });
-}
 
     onClose: function () {
       paymentInProgress = false;
@@ -1390,7 +1389,7 @@ callback: function (res) {
     }
   }).openIframe();
 }
-
+  
  function saveBooking(payment = {}) {
   const booking = {
     style: selectedStyle,
