@@ -750,6 +750,7 @@ input:focus, select:focus {
   <p>Total: R<span id="cPrice"></span></p>
   <p>Deposit Paid: R<span id="cDeposit"></span></p>
   <p>Balance Due: R<span id="cBalance"></span></p>
+  <p>Payment Status: <span id="cPaymentStatus"></span></p>
   <p>Hair Prep: Wash & dry hair before appointment</p>
   <p>Cancellation: 24h notice required</p>
   <button class="button" onclick="showScreen('client',5)">Back</button>
@@ -1373,6 +1374,15 @@ function payDeposit() {
     currency: "ZAR",
     ref: "MUMSY_" + Date.now(),
 
+      metadata: {
+    custom_fields: [
+      { display_name: "Client Name", value: document.getElementById("clientName").value },
+      { display_name: "Style", value: selectedStyle },
+      { display_name: "Date", value: document.getElementById("clientDate").value },
+      { display_name: "Time", value: document.getElementById("clientTime").value }
+    ]
+  },
+
     callback: function (res) {
       paymentInProgress = false;
 
@@ -1384,16 +1394,17 @@ function payDeposit() {
       });
     },
 
-    onClose: function () {
-      paymentInProgress = false;
-      alert("❌ Payment cancelled. Booking not completed.");
-    }
+onClose: function () {
+  paymentInProgress = false;
+  document.querySelectorAll(".submit-btn").forEach(btn => btn.disabled = false);
+  alert("❌ Payment cancelled. Booking not completed.");
+}
   });
 
   handler.openIframe();
 }
   
- function saveBooking() {
+function saveBooking(paymentData = {}) {
   const booking = {
     style: selectedStyle,
     length: selectedLength,
@@ -1407,6 +1418,13 @@ function payDeposit() {
     time: document.getElementById("clientTime").value,
 
     status: "Pending",
+
+    // 💳 PAYMENT DATA (MERGED)
+    depositPaid: paymentData.depositPaid || 0,
+    balanceRemaining: paymentData.balanceRemaining || selectedPrice,
+    paymentReference: paymentData.paymentReference || null,
+    paymentStatus: paymentData.paymentStatus || "Unpaid",
+
     createdAt: firebase.firestore.FieldValue.serverTimestamp()
   };
 
