@@ -14,6 +14,14 @@
 <!---- Paystack SDKs ------>
 <script src="https://js.paystack.co/v1/inline.js"></script>
 
+  <-------- Emailjs ---------->
+  <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+<script>
+  (function () {
+    emailjs.init("eKm4zBdlsO7x8avnv");
+  })();
+</script>
+
 <style>
 body {
   font-family: 'Poppins', sans-serif;
@@ -1404,10 +1412,6 @@ onClose: function () {
   handler.openIframe();
 }
 
-// 1️⃣ Firebase config + init
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-
 // 2️⃣ Email send function
 function sendReceiptEmail(booking, bookingId) {
   emailjs.send(
@@ -1432,7 +1436,7 @@ function sendReceiptEmail(booking, bookingId) {
 
 // 3️⃣ 👇 FIRESTORE LISTENER (ADD HERE)
 db.collection("bookings")
-  .where("paymentStatus", "==", "Paid")
+.where("paymentStatus", "in", ["Deposit Paid", "Paid"])
   .where("receiptEmailSent", "==", false)
   .onSnapshot(snapshot => {
     snapshot.docChanges().forEach(change => {
@@ -1442,11 +1446,6 @@ db.collection("bookings")
       }
     });
   });
-
-  function isServiceAccount() {
-  return request.auth != null
-    && request.auth.token.firebase.sign_in_provider == "custom";
-}
   
 function saveBooking(paymentData = {}) {
   const booking = {
@@ -2123,13 +2122,6 @@ setInterval(() => {
     });
 }, 5 * 60 * 1000); // every 5 minutes
           
-</script>
-
-  <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
-<script>
-  (function () {
-    emailjs.init("eKm4zBdlsO7x8avnv");
-  })();
 </script>
 
 </body>
