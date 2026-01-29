@@ -37,6 +37,7 @@ exports.createBooking = functions.https.onCall(async (data) => {
     price,
     clientName,
     clientPhone,
+    clientEmail: email, // ✅ ADD THIS
     date,
     time,
     status: "Pending",
@@ -96,6 +97,7 @@ exports.paystackWebhook = functions.https.onRequest(async (req, res) => {
         verified: true,
         depositPaid: transaction.amount / 100,
         status: "Accepted",
+        receiptEmailSent: false, // 👈 ADD THIS
       });
 
       // Send confirmation message
