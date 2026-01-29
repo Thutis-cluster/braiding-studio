@@ -5,6 +5,31 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mumsy Braids Studio Booking</title>
 
+  
+<!-- =========================
+     CONTENT SECURITY POLICY
+============================= -->
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src-elem 'self' 
+      /v2.22/fingerprint 
+      https://js.paystack.co 
+      https://cdn.jsdelivr.net 
+      https://www.gstatic.com 
+      https://www.googleapis.com;
+  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+  font-src 'self' https://fonts.gstatic.com;
+  img-src 'self' data:;
+  connect-src 'self' 
+      https://*.firebaseio.com 
+      https://firestore.googleapis.com 
+      https://api.paystack.co;
+  frame-src https://js.paystack.co;
+  object-src 'none';
+  base-uri 'self';
+  form-action 'self';
+">
+
 <!-- Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
