@@ -1403,6 +1403,50 @@ onClose: function () {
 
   handler.openIframe();
 }
+
+// 1️⃣ Firebase config + init
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// 2️⃣ Email send function
+function sendReceiptEmail(booking, bookingId) {
+  emailjs.send(
+    "SERVICE_ID",
+    "booking_receipt",
+    {
+      to_email: booking.clientEmail,
+      client_name: booking.clientName,
+      style: booking.style,
+      length: booking.length,
+      price: booking.price,
+      deposit: booking.depositPaid,
+      date: booking.date,
+      time: booking.time,
+    }
+  ).then(() => {
+    db.collection("bookings").doc(bookingId).update({
+      receiptEmailSent: true
+    });
+  });
+}
+
+// 3️⃣ 👇 FIRESTORE LISTENER (ADD HERE)
+db.collection("bookings")
+  .where("paymentStatus", "==", "Paid")
+  .where("receiptEmailSent", "==", false)
+  .onSnapshot(snapshot => {
+    snapshot.docChanges().forEach(change => {
+      if (change.type === "modified") {
+        const booking = change.doc.data();
+        sendReceiptEmail(booking, change.doc.id);
+      }
+    });
+  });
+
+  function isServiceAccount() {
+  return request.auth != null
+    && request.auth.token.firebase.sign_in_provider == "custom";
+}
   
 function saveBooking(paymentData = {}) {
   const booking = {
@@ -2080,5 +2124,13 @@ setInterval(() => {
 }, 5 * 60 * 1000); // every 5 minutes
           
 </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+<script>
+  (function () {
+    emailjs.init("eKm4zBdlsO7x8avnv");
+  })();
+</script>
+
 </body>
 </html>
