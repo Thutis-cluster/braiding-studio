@@ -1384,7 +1384,7 @@ function payDeposit() {
   },
 
     callback: function (res) {
-      paymentInProgress = false;
+     console.log("💳 Payment success:", res);
 
       saveBooking({
         depositPaid: deposit,
@@ -1438,6 +1438,8 @@ function saveBooking(paymentData = {}) {
       console.error(err);
       alert("❌ Failed to save booking");
     });
+
+  console.log("💾 Saving booking:", booking);
 }
   
 /*------ function confirmBooking(method) {
