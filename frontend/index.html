@@ -1062,7 +1062,7 @@ function selectLength(length) {
 }
 
 // ----------------- SAVE BOOKING -----------------
-/*------ function saveBookingToFirebase() {
+  function saveBookingToFirebase() {
 const booking = {
   style: selectedStyle,
   length: selectedLength,
@@ -1087,7 +1087,7 @@ const booking = {
       sendWhatsAppToClient(booking, "Thank you for your booking! Your appointment is pending confirmation.");
     })
     .catch(err => alert("Error saving booking. Check Firestore rules: "+err));
-} ----*/
+}
 
 function changeMonth(direction) {
   const calendar = document.getElementById("calendar");
