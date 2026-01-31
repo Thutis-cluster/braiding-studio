@@ -746,7 +746,7 @@ input:focus, select:focus {
   ✅ Confirm Booking (SMS)
 </button>
 
-<button onclick="createBookingSecure('whatsapp')">
+<button class="button submit-btn" onclick="createBookingSecure('whatsapp')">
   📱 Send Booking on WhatsApp
 </button>
 </div>
@@ -1492,6 +1492,12 @@ async function createBookingSecure(channel) {
         phone: payload.clientPhone
       })
     );
+
+    const response = await fetch("https://us-central1-mumsy-braids-booking.cloudfunctions.net/createBooking", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(bookingData)
+});
 
     // 🔁 REDIRECT TO PAYSTACK
     window.location.href = res.data.authorization_url;
