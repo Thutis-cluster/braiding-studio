@@ -24,6 +24,10 @@ async function sendWhatsApp(phone, message) {
 
 // -------------------- CREATE BOOKING --------------------
 exports.createBooking = functions.https.onCall(async (data, context) => {
+  const DEPOSIT_PERCENT = 0.45;
+  const deposit = Math.round(Number(price) * DEPOSIT_PERCENT);
+ const balance = Number(price) - deposit;
+
   const { style, length, price, clientName, clientPhone, date, time, method, email } = data;
 
   // ✅ Validate input
@@ -80,6 +84,8 @@ exports.createBooking = functions.https.onCall(async (data, context) => {
     console.error("❌ Error in createBooking:", err.response?.data || err.message);
     throw new functions.https.HttpsError("internal", "Payment initialization failed.");
   }
+
+  callback_url: "https://braiding-studioo.onrender.com//success.html"
 });
 
 // -------------------- PAYSTACK WEBHOOK --------------------
@@ -115,9 +121,17 @@ exports.paystackWebhook = functions.https.onRequest(async (req, res) => {
         paymentStatus: "Paid",
         verified: true,
         depositPaid: transaction.amount / 100,
-        status: "Accepted",
+        balanceRemaining: transaction.metadata.balance,
+        paymentStatus: "Deposit Paid",
         receiptEmailSent: false, // 👈 ADD THIS
       });
+
+      if (transaction.metadata.type === "balance") {
+  await bookingRef.update({
+    balanceRemaining: 0,
+    paymentStatus: "Fully Paid"
+  });
+}
 
       // Send confirmation message
       const booking = (await bookingRef.get()).data();
