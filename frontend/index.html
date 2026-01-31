@@ -1479,7 +1479,8 @@ async function createBookingSecure(method) {
     console.log("🔐 Sending secure booking payload:", payload);
 
     // ✅ Call Firebase function
-    const callable = firebase.functions().httpsCallable("createBooking");
+    const functions = firebase.functions("us-central1");
+const callable = functions.httpsCallable("createBooking");
     const res = await callable(payload);
 
     // ✅ Check Paystack URL
