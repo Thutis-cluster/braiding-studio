@@ -11,9 +11,6 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
 
-<!---- Paystack SDKs ------>
-<script src="https://js.paystack.co/v1/inline.js"></script>
-
   <!-------- Emailjs ---------->
   <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
 <script>
@@ -608,7 +605,17 @@ input:focus, select:focus {
   font-weight: bold;
   box-shadow: 0 10px 25px rgba(192,57,43,0.4);
 }
- 
+
+      .card {
+      background: white;
+      padding: 30px;
+      border-radius: 18px;
+      max-width: 380px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,.15);
+    }
+    h2 { color: #27AE60; }
+  
 </style>
 </head>
 
@@ -762,7 +769,18 @@ input:focus, select:focus {
   <p>Cancellation: 24h notice required</p>
   <button class="button" onclick="showScreen('client',5)">Back</button>
   <button class="button" onclick="showScreen('home',1)">Done</button>
+  <button class="button" onclick="payRemainingBalance()">
+  💳 Pay Remaining Balance
+</button>
+
 </div>
+
+   <div class="card">
+    <h2>✅ Deposit Received</h2>
+    <p>Your booking is being confirmed.</p>
+    <p>You’ll receive WhatsApp / SMS shortly 💚</p>
+    <p>You may close this page.</p>
+  </div>
 
   <!-- Admin Login Modal -->
 <div id="adminLoginModal" class="modal">
@@ -1423,6 +1441,7 @@ function sendReceiptEmail(booking, bookingId) {
       length: booking.length,
       price: booking.price,
       deposit: booking.depositPaid,
+      balance: booking.balanceRemaining, // 👈 ADD
       date: booking.date,
       time: booking.time,
     }
@@ -1446,57 +1465,51 @@ db.collection("bookings")
     });
   });
   
-async function createBookingSecure(method) { 
+async function createBookingSecure(channel) {
   try {
-    // ✅ Collect client info
-    const clientName = document.getElementById("clientName").value.trim();
-    const clientPhone = document.getElementById("clientPhone").value.trim();
-    const clientEmailInput = document.getElementById("clientEmail").value.trim();
-    const clientEmail = clientEmailInput !== "" ? clientEmailInput : "customer@mumsybraids.com";
-    const clientDate = document.getElementById("clientDate").value;
-    const clientTime = document.getElementById("clientTime").value;
-
-    // ✅ Validate required fields
-    if (!selectedPrice || !selectedStyle || !clientName || !clientPhone || !clientDate || !clientTime) {
-      alert("❌ Please fill in all required fields.");
-      return;
-    }
-
-    // ✅ Prepare payload
-    const payload = { 
-      style: selectedStyle, 
-      length: selectedLength || "", 
-      price: selectedPrice, 
-      clientName, 
-      clientPhone, 
-      email: clientEmail, 
-      date: clientDate, 
-      time: clientTime, 
-      method 
+    const payload = {
+      style: selectedStyle,
+      length: selectedLength,
+      date: clientDate.value,
+      time: clientTime.value,
+      clientName: clientName.value,
+      clientPhone: clientPhone.value,
+      clientEmail: clientEmail.value || null,
+      channel
     };
 
-    console.log("🔐 Sending secure booking payload:", payload);
-
-    // ✅ Call Firebase function
-    const functions = firebase.functions("us-central1");
-const callable = functions.httpsCallable("createBooking");
+    const callable = firebase.functions().httpsCallable("createBooking");
     const res = await callable(payload);
 
-    // ✅ Check Paystack URL
-    if (!res.data || !res.data.authorization_url) {
-      console.error("❌ No authorization_url returned from backend:", res.data);
-      alert("❌ Payment initialization failed. Contact support.");
-      return;
-    }
+    // 🔐 Save booking reference for later (balance payment)
+    localStorage.setItem(
+      "latestBooking",
+      JSON.stringify({
+        id: res.data.bookingId,
+        name: payload.clientName,
+        phone: payload.clientPhone
+      })
+    );
 
-    console.log("➡ Redirecting to Paystack hosted page:", res.data.authorization_url);
+    // 🔁 REDIRECT TO PAYSTACK
     window.location.href = res.data.authorization_url;
 
-  } catch (err) { 
-    console.error("❌ Secure booking failed:", err); 
-    alert("❌ Booking failed. Please try again."); 
-  } 
+  } catch (err) {
+    console.error(err);
+    alert("Booking failed. Please try again.");
+  }
 }
+
+  async function payRemainingBalance() {
+  const booking = JSON.parse(localStorage.getItem("latestBooking"));
+  if (!booking) return alert("Booking not found");
+
+  const callable = firebase.functions().httpsCallable("createBalancePayment");
+  const res = await callable({ bookingId: booking.id });
+
+  window.location.href = res.data.authorization_url;
+}
+
 
 function getMinutesFromEstimate(estimate) {
   // Example: "3 – 4 hours" → take MAX value
