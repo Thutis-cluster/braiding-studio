@@ -1449,32 +1449,52 @@ db.collection("bookings")
   
 async function createBookingSecure(method) { 
   try {
-    bookingMethod = method;
-const callable = firebase.functions().httpsCallable("createBooking");
+    // ✅ Collect client info
+    const clientName = document.getElementById("clientName").value.trim();
+    const clientPhone = document.getElementById("clientPhone").value.trim();
+    const clientEmailInput = document.getElementById("clientEmail").value.trim();
+    const clientEmail = clientEmailInput !== "" ? clientEmailInput : "customer@mumsybraids.com";
+    const clientDate = document.getElementById("clientDate").value;
+    const clientTime = document.getElementById("clientTime").value;
 
-const payload = { 
-style: selectedStyle, 
-length: selectedLength, 
-price: selectedPrice, 
-clientName: document.getElementById("clientName").value, 
-clientPhone: document.getElementById("clientPhone").value, 
-email: document.getElementById("clientEmail").value || "customer@mumsybraids.com", 
-date: document.getElementById("clientDate").value, 
-time: document.getElementById("clientTime").value, method 
-}; 
-    
-console.log("🔐 Sending secure booking:", payload); 
-    
-const res = await callable(payload);
-    
-const { authorization_url } = res.data; 
+    // ✅ Validate required fields
+    if (!selectedPrice || !selectedStyle || !clientName || !clientPhone || !clientDate || !clientTime) {
+      alert("❌ Please fill in all required fields.");
+      return;
+    }
 
-// 🔁 Redirect client to Paystack 
-window.location.href = authorization_url; 
-                      
-}catch (err) { 
-  console.error("❌ Secure booking failed:", err); 
-  alert("❌ Booking failed. Please try again."); 
+    // ✅ Prepare payload
+    const payload = { 
+      style: selectedStyle, 
+      length: selectedLength || "", 
+      price: selectedPrice, 
+      clientName, 
+      clientPhone, 
+      email: clientEmail, 
+      date: clientDate, 
+      time: clientTime, 
+      method 
+    };
+
+    console.log("🔐 Sending secure booking payload:", payload);
+
+    // ✅ Call Firebase function
+    const callable = firebase.functions().httpsCallable("createBooking");
+    const res = await callable(payload);
+
+    // ✅ Check Paystack URL
+    if (!res.data || !res.data.authorization_url) {
+      console.error("❌ No authorization_url returned from backend:", res.data);
+      alert("❌ Payment initialization failed. Contact support.");
+      return;
+    }
+
+    console.log("➡ Redirecting to Paystack hosted page:", res.data.authorization_url);
+    window.location.href = res.data.authorization_url;
+
+  } catch (err) { 
+    console.error("❌ Secure booking failed:", err); 
+    alert("❌ Booking failed. Please try again."); 
   } 
 }
 
