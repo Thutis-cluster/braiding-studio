@@ -77,7 +77,10 @@ exports.createBooking = functions.https.onRequest((req, res) => {
 
       await bookingRef.update({ paymentReference: reference });
 
-      res.status(200).json({ authorization_url });
+ res.status(200).json({ 
+  authorization_url, 
+  bookingId: bookingRef.id  // Important for storing locally
+});
 
     } catch (err) {
       console.error("❌ Error in createBooking:", err.response?.data || err.message);
