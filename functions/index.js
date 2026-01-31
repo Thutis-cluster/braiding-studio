@@ -3,7 +3,7 @@ const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const twilio = require("twilio");
 const axios = require("axios");
-const cors = require("cors")({ origin: "https://braiding-studioo.onrender.com" });
+const cors = require("cors")({ origin: true }); // allow all origins
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -22,8 +22,7 @@ async function sendWhatsApp(phone, message) {
   await client.messages.create({ body: message, from: TWILIO_WHATSAPP, to: "whatsapp:" + phone });
 }
 
-// -------------------- CREATE BOOKING --------------------
-exports.createBooking = functions.https.onRequest((req, res) => {
+// -------------------- CREATE BOOKING --------------------exports.createBooking = functions.https.onRequest((req, res) => {
   cors(req, res, async () => {
     if (req.method === "OPTIONS") return res.status(204).send("");
     if (req.method !== "POST") return res.status(405).send("Method Not Allowed");
@@ -32,20 +31,14 @@ exports.createBooking = functions.https.onRequest((req, res) => {
       const { style, length, price, clientName, clientPhone, date, time, method, email } = req.body;
 
       if (!style || !price || !clientName || !clientPhone || !date || !time || !email) {
-        return res.status(400).json({ error: "Missing required fields" });
+        return res.status(400).send("Missing required fields");
       }
-
-      const DEPOSIT_PERCENT = 0.45;
-      const deposit = Math.round(Number(price) * DEPOSIT_PERCENT);
-      const balance = Number(price) - deposit;
 
       // Save booking in Firestore
       const bookingRef = await db.collection("bookings").add({
         style,
         length,
         price,
-        deposit,
-        balanceRemaining: balance,
         clientName,
         clientPhone,
         clientEmail: email,
@@ -59,7 +52,7 @@ exports.createBooking = functions.https.onRequest((req, res) => {
 
       console.log("✅ Booking created with ID:", bookingRef.id);
 
-      // Initialize Paystack transaction for deposit
+      // Initialize Paystack
       const secret = functions.config().paystack?.secret || process.env.PAYSTACK_SECRET;
       if (!secret) throw new Error("Paystack secret key not set.");
 
@@ -67,24 +60,23 @@ exports.createBooking = functions.https.onRequest((req, res) => {
         "https://api.paystack.co/transaction/initialize",
         {
           email,
-          amount: deposit * 100, // Paystack expects kobo/cents
+          amount: Number(price) * 100,
           metadata: { bookingId: bookingRef.id, type: "deposit" }
         },
         { headers: { Authorization: `Bearer ${secret}` } }
       );
 
-      const { reference, authorization_url } = response.data.data;
+      const { authorization_url, reference } = response.data.data;
 
+      // Update booking with payment reference
       await bookingRef.update({ paymentReference: reference });
 
- res.status(200).json({ 
-  authorization_url, 
-  bookingId: bookingRef.id  // Important for storing locally
-});
+      // 🔹 Redirect user to Paystack directly
+      return res.redirect(authorization_url);
 
     } catch (err) {
       console.error("❌ Error in createBooking:", err.response?.data || err.message);
-      res.status(500).json({ error: "Payment initialization failed" });
+      return res.status(500).send("Booking failed. Please try again.");
     }
   });
 });
