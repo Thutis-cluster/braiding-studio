@@ -26,58 +26,60 @@ async function sendWhatsApp(phone, message) {
 exports.createBooking = functions.https.onCall(async (data, context) => {
   const { style, length, price, clientName, clientPhone, date, time, method, email } = data;
 
-  if (!style || !length || !price || !clientName || !clientPhone || !date || !time || !email) {
+  // ✅ Validate input
+  if (!style || !price || !clientName || !clientPhone || !date || !time || !email) {
     throw new functions.https.HttpsError("invalid-argument", "Missing required fields");
   }
 
-  // ⏰ Calculate reminder time (5 hours before)
-  const appointment = new Date(`${date}T${time}:00`);
-  const reminderAt = admin.firestore.Timestamp.fromDate(
-    new Date(appointment.getTime() - 5 * 60 * 60 * 1000)
-  );
+  try {
+    // 1️⃣ Save booking in Firestore
+    const bookingRef = await db.collection("bookings").add({
+      style,
+      length,
+      price,
+      clientName,
+      clientPhone,
+      clientEmail: email,
+      date,
+      time,
+      method,
+      status: "Pending",
+      paymentStatus: "Unpaid",
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
+    });
 
-  // 1️⃣ Create booking
-  const bookingRef = await db.collection("bookings").add({
-    style,
-    length,
-    price,
-    clientName,
-    clientPhone,
-    clientEmail: email,
-    date,
-    time,
-    method,
+    console.log("✅ Booking created with ID:", bookingRef.id);
 
-    status: "Pending",
-    paymentStatus: "Unpaid",
-    reminderSent: false,
-    reminderAt,
+    // 2️⃣ Initialize Paystack transaction
+    const secret = functions.config().paystack?.secret || process.env.PAYSTACK_SECRET;
+    if (!secret) throw new Error("Paystack secret key not set in environment.");
 
-    createdAt: admin.firestore.FieldValue.serverTimestamp()
-  });
-
-  // 2️⃣ Paystack init (SERVER ONLY)
-  const response = await axios.post(
-    "https://api.paystack.co/transaction/initialize",
-    {
-      email,
-      amount: Number(price) * 100,
-      metadata: { bookingId: bookingRef.id }
-    },
-    {
-      headers: {
-        Authorization: `Bearer ${functions.config().paystack.secret}`
+    const response = await axios.post(
+      "https://api.paystack.co/transaction/initialize",
+      {
+        email,
+        amount: Number(price) * 100,  // Paystack expects cents
+        metadata: { bookingId: bookingRef.id }
+      },
+      {
+        headers: { Authorization: `Bearer ${secret}` }
       }
-    }
-  );
+    );
 
-  await bookingRef.update({
-    paymentReference: response.data.data.reference
-  });
+    const { reference, authorization_url } = response.data.data;
 
-  return {
-    authorization_url: response.data.data.authorization_url
-  };
+    // 3️⃣ Update booking with payment reference
+    await bookingRef.update({ paymentReference: reference });
+
+    console.log("➡ Paystack transaction initialized:", reference);
+
+    // 4️⃣ Return authorization URL to frontend
+    return { authorization_url };
+
+  } catch (err) {
+    console.error("❌ Error in createBooking:", err.response?.data || err.message);
+    throw new functions.https.HttpsError("internal", "Payment initialization failed.");
+  }
 });
 
 // -------------------- PAYSTACK WEBHOOK --------------------
