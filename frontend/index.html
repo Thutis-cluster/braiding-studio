@@ -1060,7 +1060,7 @@ function selectLength(length) {
       console.error("Date check failed:", err);
     });
 }
-
+/*----------
 // ----------------- SAVE BOOKING -----------------
   function saveBookingToFirebase() {
 const booking = {
@@ -1087,7 +1087,7 @@ const booking = {
       sendWhatsAppToClient(booking, "Thank you for your booking! Your appointment is pending confirmation.");
     })
     .catch(err => alert("Error saving booking. Check Firestore rules: "+err));
-}
+} ---------------*/
 
 function changeMonth(direction) {
   const calendar = document.getElementById("calendar");
@@ -1477,7 +1477,7 @@ function saveBooking(paymentData = {}) {
     createdAt: firebase.firestore.FieldValue.serverTimestamp()
   };
 
-  db.collection("bookings").add(booking)
+    db.collection("bookings").add(booking)
     .then(docRef => {
       booking.id = docRef.id;
       localStorage.setItem("latestBooking", JSON.stringify(booking));
