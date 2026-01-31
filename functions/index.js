@@ -4,6 +4,8 @@ const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const twilio = require("twilio");
 const axios = require("axios");
+const cors = require("cors")({ origin: "https://braiding-studioo.onrender.com" });
+
 
 admin.initializeApp();
 const db = admin.firestore();
