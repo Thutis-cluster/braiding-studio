@@ -23,44 +23,61 @@ async function sendWhatsApp(phone, message) {
 }
 
 // -------------------- CREATE BOOKING --------------------
-exports.createBooking = functions.https.onCall(async (data) => {
+exports.createBooking = functions.https.onCall(async (data, context) => {
   const { style, length, price, clientName, clientPhone, date, time, method, email } = data;
 
   if (!style || !length || !price || !clientName || !clientPhone || !date || !time || !email) {
     throw new functions.https.HttpsError("invalid-argument", "Missing required fields");
   }
 
-  // 1️⃣ Create booking in Firestore (status pending)
+  // ⏰ Calculate reminder time (5 hours before)
+  const appointment = new Date(`${date}T${time}:00`);
+  const reminderAt = admin.firestore.Timestamp.fromDate(
+    new Date(appointment.getTime() - 5 * 60 * 60 * 1000)
+  );
+
+  // 1️⃣ Create booking
   const bookingRef = await db.collection("bookings").add({
     style,
     length,
     price,
     clientName,
     clientPhone,
-    clientEmail: email, // ✅ ADD THIS
+    clientEmail: email,
     date,
     time,
+    method,
+
     status: "Pending",
-    method, // 'sms' or 'whatsapp'
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    paymentStatus: "Unpaid",
     reminderSent: false,
+    reminderAt,
+
+    createdAt: admin.firestore.FieldValue.serverTimestamp()
   });
 
-  // 2️⃣ Initialize Paystack transaction
-  const amountKobo = Number(price) * 100; // Naira → Kobo
+  // 2️⃣ Paystack init (SERVER ONLY)
   const response = await axios.post(
     "https://api.paystack.co/transaction/initialize",
-    { email, amount: amountKobo, metadata: { bookingId: bookingRef.id } },
-    { headers: { Authorization: `Bearer ${functions.config().paystack.secret}` } }
+    {
+      email,
+      amount: Number(price) * 100,
+      metadata: { bookingId: bookingRef.id }
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${functions.config().paystack.secret}`
+      }
+    }
   );
 
-  const { authorization_url, reference } = response.data.data;
+  await bookingRef.update({
+    paymentReference: response.data.data.reference
+  });
 
-  // 3️⃣ Save Paystack reference
-  await bookingRef.update({ paymentReference: reference });
-
-  // 4️⃣ Return URL to client
-  return { authorization_url, reference, bookingId: bookingRef.id };
+  return {
+    authorization_url: response.data.data.authorization_url
+  };
 });
 
 // -------------------- PAYSTACK WEBHOOK --------------------
