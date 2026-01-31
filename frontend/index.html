@@ -14,7 +14,7 @@
 <!---- Paystack SDKs ------>
 <script src="https://js.paystack.co/v1/inline.js"></script>
 
-  <-------- Emailjs ---------->
+  <!-------- Emailjs ---------->
   <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
 <script>
   (function () {
@@ -1477,7 +1477,7 @@ function saveBooking(paymentData = {}) {
     createdAt: firebase.firestore.FieldValue.serverTimestamp()
   };
 
-    db.collection("bookings").add(booking)
+  /*------  db.collection("bookings").add(booking)
     .then(docRef => {
       booking.id = docRef.id;
       localStorage.setItem("latestBooking", JSON.stringify(booking));
@@ -1486,80 +1486,8 @@ function saveBooking(paymentData = {}) {
     .catch(err => {
       console.error("🔥 Firestore write blocked:", err);
       alert("❌ Failed to save booking");
-    });
+    });  -----*/
 }
-  
-/*------ function confirmBooking(method) {
-  if (isSubmitting) return; // prevent double submissions
-  isSubmitting = true;
-
-  // disable all submit buttons while processing
-  document.querySelectorAll(".submit-btn").forEach(btn => {
-    btn.disabled = true;
-    btn.textContent = "⏳ Submitting...";
-  });
-
-  // --- Get client details safely ---
-  const clientName = document.getElementById("clientName").value.trim();
-  const clientPhone = document.getElementById("clientPhone").value.trim();
-  const clientEmail = document.getElementById("clientEmail").value.trim();
-  const clientDate = document.getElementById("clientDate").value;
-  const clientTime = document.getElementById("clientTime").value;
-
-  // --- Validate required fields ---
-  if (!clientName || !clientPhone) {
-    alert("⚠️ Please fill in your Name and Phone.");
-    resetSubmitButtons();
-    return;
-  }
-
-  // --- Check working hours ---
-  const selectedHour = getHourFromTime(clientTime);
-  if (selectedHour < WORK_START || selectedHour >= WORK_END) {
-    alert("⛔ Bookings are only available between 09:00 and 17:00.");
-    resetSubmitButtons();
-    return;
-  }
-
-  // --- Check if style duration fits the time slot ---
-  const requiredMinutes = getMinutesFromEstimate(selectedTimeEstimate);
-  if (requiredMinutes > TIME_PER_SLOT_MINUTES) {
-    alert(`⛔ This style requires about ${selectedTimeEstimate}, which exceeds the available slot.`);
-    resetSubmitButtons();
-    return;
-  }
-
-  // --- Create booking object ---
-  const booking = {
-    style: selectedStyle,
-    length: selectedLength,
-    timeEstimate: selectedTimeEstimate,
-    price: selectedPrice,
-    clientName,
-    clientPhone,
-    clientEmail,
-    date: clientDate,
-    time: clientTime,
-    status: "Pending",
-    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-    method
-  };
-
-  // --- Save booking to Firebase ---
-  db.collection("bookings").add(booking)
-    .then(docRef => {
-      booking.id = docRef.id;
-      localStorage.setItem("latestBooking", JSON.stringify(booking));
-      showScreen("confirmation", 5);
-
-      // Send notification
-      if (method === "sms") sendSmsToClient(booking, "✅ Booking Confirmed!");
-    })
-    .catch(err => {
-      alert("❌ Error saving booking: " + err);
-      resetSubmitButtons();
-    });
-} ------ */
 
 function getMinutesFromEstimate(estimate) {
   // Example: "3 – 4 hours" → take MAX value
@@ -1705,18 +1633,18 @@ function sendReminderIfDue(booking) {
         }
 
         // Optional: add a chat message for admin
-        db.collection("adminChat").add({
+        /*----- db.collection("adminChat").add({
             message: `Reminder sent to ${booking.clientName} for ${booking.date} ${booking.time}`,
             timestamp: firebase.firestore.Timestamp.now(),
             type: "reminder"
         });
-
+        
         // Mark reminder sent in Firestore
         if (booking.id) {
             db.collection("bookings").doc(booking.id).update({ reminderSent: true })
                 .then(() => console.log("5-hour reminder sent for", booking.clientName))
                 .catch(err => console.error("Error updating reminder:", err));
-        }
+        }   --------*/
     }
 }
 
@@ -1755,7 +1683,9 @@ function updateBookingStatus(id, status) {
         throw new Error("Not admin"); // prevent further execution
       }
 
-      return db.collection("bookings").doc(id).get();
+      alert("Status update request sent.");
+
+     /*------ return db.collection("bookings").doc(id).get();
     })
     .then(doc => {
       if (!doc.exists) throw new Error("Booking not found");
@@ -1775,7 +1705,7 @@ notifyClientWithFallback(
   `✅ Your booking status is now: ${status}!`
 );
 
-      });
+      }); -------*/
     })
     
     .catch(err => {
@@ -2071,7 +2001,7 @@ function markPitched(bookingId, value) {
 
   if (!confirm("⚠️ Are you sure you want to delete this booking?")) return;
 
-  db.collection("bookings").doc(id).delete()
+/*----   db.collection("bookings").doc(id).delete()
     .then(() => {
       console.log("Booking deleted:", id);
       alert("Booking deleted successfully!");
@@ -2079,7 +2009,7 @@ function markPitched(bookingId, value) {
     .catch(err => {
       console.error("Error deleting booking:", err);
       alert("Failed to delete booking.");
-    });
+    }); -----*/
 }
 
   function resetSubmitButtons() {
