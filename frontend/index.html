@@ -733,11 +733,11 @@ input:focus, select:focus {
 
 
   <button class="button" onclick="showScreen('date',4)">Back</button>
-<button class="button submit-btn" onclick="handleBooking('sms')">
+<button class="button submit-btn" onclick="createBookingSecure('sms')">
   ✅ Confirm Booking (SMS)
 </button>
 
-<button class="button submit-btn" onclick="handleBooking('whatsapp')">
+<button class="button submit-btn" onclick="createBookingSecure('whatsapp')">
   📱 Send Booking on WhatsApp
 </button>
 
@@ -1447,46 +1447,35 @@ db.collection("bookings")
     });
   });
   
-function saveBooking(paymentData = {}) {
-  if (!bookingMethod) {
-    alert("❌ Booking method missing");
-    return;
-  }
+async function createBookingSecure(method) { 
+  try {
+    bookingMethod = method;
+const callable = firebase.functions().httpsCallable("createBooking");
 
-  const booking = {
-    style: selectedStyle,
-    length: selectedLength,
-    price: selectedPrice,
-    timeEstimate: selectedTimeEstimate,
+const payload = { 
+style: selectedStyle, 
+length: selectedLength, 
+price: selectedPrice, 
+clientName: document.getElementById("clientName").value, 
+clientPhone: document.getElementById("clientPhone").value, 
+email: document.getElementById("clientEmail").value || "customer@mumsybraids.com", 
+date: document.getElementById("clientDate").value, 
+time: document.getElementById("clientTime").value, method 
+}; 
+    
+console.log("🔐 Sending secure booking:", payload); 
+    
+const res = await callable(payload);
+    
+const { authorization_url } = res.data; 
 
-    clientName: document.getElementById("clientName").value,
-    clientPhone: document.getElementById("clientPhone").value,
-    clientEmail: document.getElementById("clientEmail").value,
-
-    date: document.getElementById("clientDate").value,
-    time: document.getElementById("clientTime").value,
-
-    method: bookingMethod, // ✅ REQUIRED BY RULES
-    status: "Pending",
-
-    depositPaid: paymentData.depositPaid || 0,
-    balanceRemaining: paymentData.balanceRemaining || selectedPrice,
-    paymentReference: paymentData.paymentReference || null,
-    paymentStatus: paymentData.paymentStatus || "Unpaid",
-
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  };
-
-  /*------  db.collection("bookings").add(booking)
-    .then(docRef => {
-      booking.id = docRef.id;
-      localStorage.setItem("latestBooking", JSON.stringify(booking));
-      showScreen("confirmation", 5);
-    })
-    .catch(err => {
-      console.error("🔥 Firestore write blocked:", err);
-      alert("❌ Failed to save booking");
-    });  -----*/
+// 🔁 Redirect client to Paystack 
+window.location.href = authorization_url; 
+                      
+}catch (err) { 
+  console.error("❌ Secure booking failed:", err); 
+  alert("❌ Booking failed. Please try again."); 
+  } 
 }
 
 function getMinutesFromEstimate(estimate) {
