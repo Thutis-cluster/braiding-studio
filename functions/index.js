@@ -1,11 +1,9 @@
 // index.js
-
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const twilio = require("twilio");
 const axios = require("axios");
 const cors = require("cors")({ origin: "https://braiding-studioo.onrender.com" });
-
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -25,132 +23,122 @@ async function sendWhatsApp(phone, message) {
 }
 
 // -------------------- CREATE BOOKING --------------------
-exports.createBooking = functions.https.onCall(async (data, context) => {
-  const DEPOSIT_PERCENT = 0.45;
-  const deposit = Math.round(Number(price) * DEPOSIT_PERCENT);
- const balance = Number(price) - deposit;
+exports.createBooking = functions.https.onRequest((req, res) => {
+  cors(req, res, async () => {
+    if (req.method === "OPTIONS") return res.status(204).send("");
+    if (req.method !== "POST") return res.status(405).send("Method Not Allowed");
 
-  const { style, length, price, clientName, clientPhone, date, time, method, email } = data;
+    try {
+      const { style, length, price, clientName, clientPhone, date, time, method, email } = req.body;
 
-  // ✅ Validate input
-  if (!style || !price || !clientName || !clientPhone || !date || !time || !email) {
-    throw new functions.https.HttpsError("invalid-argument", "Missing required fields");
-  }
-
-  try {
-    // 1️⃣ Save booking in Firestore
-    const bookingRef = await db.collection("bookings").add({
-      style,
-      length,
-      price,
-      clientName,
-      clientPhone,
-      clientEmail: email,
-      date,
-      time,
-      method,
-      status: "Pending",
-      paymentStatus: "Unpaid",
-      createdAt: admin.firestore.FieldValue.serverTimestamp()
-    });
-
-    console.log("✅ Booking created with ID:", bookingRef.id);
-
-    // 2️⃣ Initialize Paystack transaction
-    const secret = functions.config().paystack?.secret || process.env.PAYSTACK_SECRET;
-    if (!secret) throw new Error("Paystack secret key not set in environment.");
-
-    const response = await axios.post(
-      "https://api.paystack.co/transaction/initialize",
-      {
-        email,
-        amount: Number(price) * 100,  // Paystack expects cents
-        metadata: { bookingId: bookingRef.id }
-      },
-      {
-        headers: { Authorization: `Bearer ${secret}` }
+      if (!style || !price || !clientName || !clientPhone || !date || !time || !email) {
+        return res.status(400).json({ error: "Missing required fields" });
       }
-    );
 
-    const { reference, authorization_url } = response.data.data;
+      const DEPOSIT_PERCENT = 0.45;
+      const deposit = Math.round(Number(price) * DEPOSIT_PERCENT);
+      const balance = Number(price) - deposit;
 
-    // 3️⃣ Update booking with payment reference
-    await bookingRef.update({ paymentReference: reference });
+      // Save booking in Firestore
+      const bookingRef = await db.collection("bookings").add({
+        style,
+        length,
+        price,
+        deposit,
+        balanceRemaining: balance,
+        clientName,
+        clientPhone,
+        clientEmail: email,
+        date,
+        time,
+        method,
+        status: "Pending",
+        paymentStatus: "Deposit Unpaid",
+        createdAt: admin.firestore.FieldValue.serverTimestamp()
+      });
 
-    console.log("➡ Paystack transaction initialized:", reference);
+      console.log("✅ Booking created with ID:", bookingRef.id);
 
-    // 4️⃣ Return authorization URL to frontend
-    return { authorization_url };
+      // Initialize Paystack transaction for deposit
+      const secret = functions.config().paystack?.secret || process.env.PAYSTACK_SECRET;
+      if (!secret) throw new Error("Paystack secret key not set.");
 
-  } catch (err) {
-    console.error("❌ Error in createBooking:", err.response?.data || err.message);
-    throw new functions.https.HttpsError("internal", "Payment initialization failed.");
-  }
+      const response = await axios.post(
+        "https://api.paystack.co/transaction/initialize",
+        {
+          email,
+          amount: deposit * 100, // Paystack expects kobo/cents
+          metadata: { bookingId: bookingRef.id, type: "deposit" }
+        },
+        { headers: { Authorization: `Bearer ${secret}` } }
+      );
 
-  callback_url: "https://braiding-studioo.onrender.com//success.html"
+      const { reference, authorization_url } = response.data.data;
+
+      await bookingRef.update({ paymentReference: reference });
+
+      res.status(200).json({ authorization_url });
+
+    } catch (err) {
+      console.error("❌ Error in createBooking:", err.response?.data || err.message);
+      res.status(500).json({ error: "Payment initialization failed" });
+    }
+  });
 });
 
 // -------------------- PAYSTACK WEBHOOK --------------------
-// This handles automatic verification when payment is completed
 exports.paystackWebhook = functions.https.onRequest(async (req, res) => {
   const paystackSignature = req.headers['x-paystack-signature'];
   const secret = functions.config().paystack.secret;
 
-  // Verify webhook signature for security
   const crypto = require('crypto');
   const hash = crypto.createHmac('sha512', secret).update(JSON.stringify(req.body)).digest('hex');
-  if (hash !== paystackSignature) {
-    return res.status(400).send('Invalid signature');
-  }
+  if (hash !== paystackSignature) return res.status(400).send('Invalid signature');
 
   const event = req.body;
-  
-  // Only process successful payments
-  if (event.event === 'charge.success') {
-    const transaction = event.data;
-    const bookingId = transaction.metadata.bookingId;
+  if (event.event !== 'charge.success') return res.status(200).send('Event ignored');
 
-    if (!bookingId) {
-      console.error("Webhook missing bookingId in metadata");
-      return res.status(400).send('Missing bookingId');
-    }
+  const transaction = event.data;
+  const bookingId = transaction.metadata.bookingId;
+  if (!bookingId) return res.status(400).send('Missing bookingId');
 
-    try {
-      const bookingRef = db.collection("bookings").doc(bookingId);
+  try {
+    const bookingRef = db.collection("bookings").doc(bookingId);
+    const bookingSnap = await bookingRef.get();
+    const booking = bookingSnap.data();
 
-      // Update booking as paid
-      await bookingRef.update({
-        paymentStatus: "Paid",
-        verified: true,
-        depositPaid: transaction.amount / 100,
-        balanceRemaining: transaction.metadata.balance,
+    let updateData = {};
+
+    if (transaction.metadata.type === "deposit") {
+      // Deposit paid
+      updateData = {
         paymentStatus: "Deposit Paid",
-        receiptEmailSent: false, // 👈 ADD THIS
-      });
-
-      if (transaction.metadata.type === "balance") {
-  await bookingRef.update({
-    balanceRemaining: 0,
-    paymentStatus: "Fully Paid"
-  });
-}
-
-      // Send confirmation message
-      const booking = (await bookingRef.get()).data();
-      const message = `✅ Booking confirmed!\nHi ${booking.clientName}, your ${booking.style} (${booking.length}) appointment is confirmed.\n📅 ${booking.date}\n🕒 ${booking.time}`;
-
-      if (booking.method === "whatsapp") await sendWhatsApp(booking.clientPhone, message);
-      else await sendSms(booking.clientPhone, message);
-
-      console.log(`Booking ${bookingId} verified and confirmed.`);
-      return res.status(200).send('Webhook processed');
-    } catch (err) {
-      console.error("Error processing webhook:", err);
-      return res.status(500).send('Internal Server Error');
+        depositPaid: transaction.amount / 100,
+        balanceRemaining: booking.balanceRemaining,
+        verified: true
+      };
+    } else if (transaction.metadata.type === "balance") {
+      // Balance paid
+      updateData = {
+        balanceRemaining: 0,
+        paymentStatus: "Fully Paid"
+      };
     }
-  } else {
-    // Ignore other events
-    return res.status(200).send('Event ignored');
+
+    await bookingRef.update(updateData);
+
+    // Send confirmation message
+    const message = `✅ Booking confirmed!\nHi ${booking.clientName}, your ${booking.style} (${booking.length}) appointment is confirmed.\n📅 ${booking.date}\n🕒 ${booking.time}`;
+
+    if (booking.method === "whatsapp") await sendWhatsApp(booking.clientPhone, message);
+    else await sendSms(booking.clientPhone, message);
+
+    console.log(`Booking ${bookingId} payment processed. Type: ${transaction.metadata.type}`);
+    res.status(200).send('Webhook processed');
+
+  } catch (err) {
+    console.error("Error processing webhook:", err);
+    res.status(500).send('Internal Server Error');
   }
 });
 
