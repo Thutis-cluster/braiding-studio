@@ -1469,6 +1469,7 @@ db.collection("bookings")
   
 async function createBookingSecure(channel) {
   try {
+    // 1️⃣ Prepare booking data
     const bookingData = {
       style: selectedStyle,
       length: selectedLength,
@@ -1480,36 +1481,40 @@ async function createBookingSecure(channel) {
       method: channel
     };
 
-    // Call your HTTP function via fetch (httpsCallable removed)
-    const res = await fetch("https://us-central1-mumsy-braids-booking.cloudfunctions.net/createBooking", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(bookingData)
-    });
+    // 2️⃣ Call the backend HTTP function
+    const res = await fetch(
+      "https://us-central1-mumsy-braids-booking.cloudfunctions.net/createBooking",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(bookingData)
+      }
+    );
 
+    // 3️⃣ Check for errors
     if (!res.ok) {
-      const error = await res.json();
-      throw new Error(error.error || "Booking failed");
+      const error = await res.json().catch(() => ({}));
+      throw new Error(error.error || "Booking failed. Please try again.");
     }
 
     const data = await res.json();
 
-    // 🔐 Save booking reference for later (balance payment)
+    // 4️⃣ Save booking reference locally
     localStorage.setItem(
       "latestBooking",
       JSON.stringify({
-        id: data.bookingId,   // Make sure backend returns this
+        id: data.bookingId,
         name: bookingData.clientName,
         phone: bookingData.clientPhone
       })
     );
 
-    // 🔁 Redirect to Paystack
+    // 5️⃣ Redirect to Paystack payment page
     window.location.href = data.authorization_url;
 
   } catch (err) {
     console.error("Booking error:", err);
-    alert("Booking failed. Please try again.");
+    alert(err.message);
   }
 }
   
