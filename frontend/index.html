@@ -1448,6 +1448,11 @@ db.collection("bookings")
   });
   
 function saveBooking(paymentData = {}) {
+  if (!bookingMethod) {
+    alert("❌ Booking method missing");
+    return;
+  }
+
   const booking = {
     style: selectedStyle,
     length: selectedLength,
@@ -1457,12 +1462,13 @@ function saveBooking(paymentData = {}) {
     clientName: document.getElementById("clientName").value,
     clientPhone: document.getElementById("clientPhone").value,
     clientEmail: document.getElementById("clientEmail").value,
+
     date: document.getElementById("clientDate").value,
     time: document.getElementById("clientTime").value,
 
+    method: bookingMethod, // ✅ REQUIRED BY RULES
     status: "Pending",
 
-    // 💳 PAYMENT DATA (MERGED)
     depositPaid: paymentData.depositPaid || 0,
     balanceRemaining: paymentData.balanceRemaining || selectedPrice,
     paymentReference: paymentData.paymentReference || null,
@@ -1478,11 +1484,9 @@ function saveBooking(paymentData = {}) {
       showScreen("confirmation", 5);
     })
     .catch(err => {
-      console.error(err);
+      console.error("🔥 Firestore write blocked:", err);
       alert("❌ Failed to save booking");
     });
-
-  console.log("💾 Saving booking:", booking);
 }
   
 /*------ function confirmBooking(method) {
