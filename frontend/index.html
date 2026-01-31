@@ -737,10 +737,9 @@ input:focus, select:focus {
   ✅ Confirm Booking (SMS)
 </button>
 
-<button class="button submit-btn" onclick="createBookingSecure('whatsapp')">
+<button onclick="createBookingSecure('whatsapp')">
   📱 Send Booking on WhatsApp
 </button>
-
 </div>
 
 <div id="confirmation" class="screen">
@@ -1360,7 +1359,7 @@ function validateClientForm() {
       alert("❌ Error saving booking.");
       console.error(err);
     });
-}  ------*/
+}
 
 function payDeposit() {
   if (paymentInProgress) return;
@@ -1410,7 +1409,7 @@ onClose: function () {
   });
 
   handler.openIframe();
-}
+} ------*/
 
 // 2️⃣ Email send function
 function sendReceiptEmail(booking, bookingId) {
