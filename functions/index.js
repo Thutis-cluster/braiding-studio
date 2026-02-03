@@ -4,6 +4,15 @@ const admin = require("firebase-admin");
 const twilio = require("twilio");
 const axios = require("axios");
 const cors = require("cors")({ origin: true }); // allow all origins
+require("dotenv").config();
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+admin.initializeApp({
+  credential: admin.credential.applicationDefault(),
+});
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -23,11 +32,8 @@ async function sendWhatsApp(phone, message) {
 }
 
 // -------------------- CREATE BOOKING --------------------
-exports.createBooking = functions.https.onRequest((req, res) => {
-  cors(req, res, async () => {
-
-    const data = req.method === "POST" ? req.body : req.query;
-
+app.get("/create-booking", async (req, res) => {
+  try {
     const {
       style,
       length,
@@ -38,7 +44,7 @@ exports.createBooking = functions.https.onRequest((req, res) => {
       time,
       method,
       email
-    } = data;
+    } = req.query;
 
     if (!style || !price || !clientName || !clientPhone || !date || !time || !email) {
       return res.status(400).send("Missing required fields");
@@ -59,8 +65,6 @@ exports.createBooking = functions.https.onRequest((req, res) => {
       createdAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
-    const secret = functions.config().paystack.secret;
-
     const response = await axios.post(
       "https://api.paystack.co/transaction/initialize",
       {
@@ -68,12 +72,20 @@ exports.createBooking = functions.https.onRequest((req, res) => {
         amount: Number(price) * 100,
         metadata: { bookingId: bookingRef.id, type: "deposit" }
       },
-      { headers: { Authorization: `Bearer ${secret}` } }
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.PAYSTACK_SECRET}`
+        }
+      }
     );
 
-    // 🔥 THIS is what makes Paystack open
-    return res.redirect(response.data.data.authorization_url);
-  });
+    // 🔥 Redirect to Paystack
+    res.redirect(response.data.data.authorization_url);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Booking failed");
+  }
 });
 
 // -------------------- PAYSTACK WEBHOOK --------------------
@@ -170,3 +182,7 @@ exports.sendFiveHourReminders = functions.pubsub
 
     return null;
   });
+
+// ---------------- START SERVER ----------------
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log("🚀 Server running on port", PORT));
