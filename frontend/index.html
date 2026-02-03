@@ -1060,34 +1060,6 @@ function selectLength(length) {
       console.error("Date check failed:", err);
     });
 }
-/*----------
-// ----------------- SAVE BOOKING -----------------
-  function saveBookingToFirebase() {
-const booking = {
-  style: selectedStyle,
-  length: selectedLength,
-  price: selectedPrice,
-  timeEstimate: selectedTimeEstimate, // ← add this
-  clientName: document.getElementById("clientName").value,
-  clientPhone: document.getElementById("clientPhone").value,
-  clientEmail: document.getElementById("clientEmail").value,
-  date: document.getElementById("clientDate").value,
-  time: document.getElementById("clientTime").value,
-  status: "Pending",
-  createdAt: firebase.firestore.FieldValue.serverTimestamp()
-};
-
-  db.collection("bookings").add(booking)
-    .then((docRef) => {
-      sendWhatsAppToAdmin(booking);
-      console.log("Booking saved:", docRef.id);
-      booking.id = docRef.id;
-      localStorage.setItem("latestBooking", JSON.stringify(booking));
-      showScreen("confirmation",5);
-      sendWhatsAppToClient(booking, "Thank you for your booking! Your appointment is pending confirmation.");
-    })
-    .catch(err => alert("Error saving booking. Check Firestore rules: "+err));
-} ---------------*/
 
 function changeMonth(direction) {
   const calendar = document.getElementById("calendar");
@@ -1323,45 +1295,6 @@ function validateClientForm() {
   });
 }
 
-/*------ function saveBookingWithoutPayment() {
-  const booking = {
-    style: selectedStyle,
-    length: selectedLength,
-    price: selectedPrice,
-    depositPaid: 0,
-    balanceRemaining: selectedPrice,
-    paymentStatus: "No Deposit Required",
-    timeEstimate: selectedTimeEstimate,
-
-    clientName: document.getElementById("clientName").value,
-    clientPhone: document.getElementById("clientPhone").value,
-    clientEmail: document.getElementById("clientEmail").value,
-    date: document.getElementById("clientDate").value,
-    time: document.getElementById("clientTime").value,
-
-    status: "Pending",
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  };
-
-  db.collection("bookings").add(booking)
-    .then(docRef => {
-      booking.id = docRef.id;
-      localStorage.setItem("latestBooking", JSON.stringify(booking));
-
-      sendWhatsAppToAdmin(booking);
-      sendWhatsAppToClient(
-        booking,
-        "✅ Booking confirmed. No deposit was required."
-      );
-
-      showScreen("confirmation", 5);
-    })
-    .catch(err => {
-      alert("❌ Error saving booking.");
-      console.error(err);
-    });
-}  ------*/
-
 function payDeposit() {
   if (paymentInProgress) return;
   paymentInProgress = true;
@@ -1508,48 +1441,6 @@ const TIME_PER_SLOT_MINUTES = 90; // 1.5 hours
   });
 }
 
-// Send WhatsApp to ADMIN
-function sendWhatsAppToAdmin(booking) {
-  const adminPhone = "27794380103";
-
-  const message =
-    "📢 NEW BOOKING RECEIVED\n\n" +
-    `👤 Name: ${booking.clientName}\n` +
-    `📞 Phone: ${booking.clientPhone}\n` +
-    `💇 Style: ${booking.style}\n` +
-    `📏 Length: ${booking.length}\n` +
-    `💰 Price: R${booking.price}\n` +
-    `📅 Date: ${booking.date}\n` +
-    `🕒 Time: ${booking.time}`;
-
-  window.open(
-    `https://wa.me/${adminPhone}?text=${encodeURIComponent(message)}`,
-    "_blank"
-  );
-}
-
-// Send WhatsApp to CLIENT
-function sendWhatsAppToClient(booking, intro = "") {
-    const formattedPhone = formatPhoneForWhatsApp(booking.clientPhone);
-    const message = `
-${intro}
-Hello ${booking.clientName},
-💇 Style: ${booking.style}
-📏 Length: ${booking.length}
-💰 Price: R${booking.price}
-📅 Date: ${booking.date}
-🕒 Time: ${booking.time}
-📌 Status: ${booking.status}
-
-Hair Prep: Wash & dry hair before appointment
-Cancellation: 24h notice required
-    `;
-    window.open(
-        `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`,
-        "_blank"
-    );
-}
-
 function sendWhatsAppBooking(booking, method) {
   if (method !== "whatsapp") return;
 
@@ -1576,40 +1467,6 @@ fetch("https://us-central1-mumsy-braids-booking.cloudfunctions.net/sendSMS", {
         else console.error("SMS failed:", data.error);
     })
     .catch(err => console.error("Error sending SMS:", err));
-}
-
-
-// Send SMS to client
-function sendSmsToClient(booking, messageIntro = "") {
-  // Clean the phone number (keep only digits)
-  const phone = booking.clientPhone.replace(/\D/g, '');
-
-  // Construct the SMS message (plain text only)
-  const message = `${messageIntro}\nHello ${booking.clientName},\nYour booking details:\n` +
-                  `Style: ${booking.style}\n` +
-                  `Length: ${booking.length}\n` +
-                  `Price: R${booking.price}\n` +
-                  `Date: ${booking.date}\n` +
-                  `Time: ${booking.time}\n` +
-                  `Status: ${booking.status}\n` +
-                  `Hair Prep: Wash & dry hair before appointment\n` +
-                  `Cancellation: 24h notice required`;
-
-  // Send request to your server to trigger Twilio SMS
-fetch("https://us-central1-mumsy-braids-booking.cloudfunctions.net/sendSMS", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ phone, message })
-  })
-  .then(res => res.json())
-  .then(data => {
-    if (data.success) {
-      console.log("SMS sent successfully!");
-    } else {
-      console.error("Failed to send SMS:", data.error);
-    }
-  })
-  .catch(err => console.error("Error sending SMS:", err));
 }
 
       // ----------------- REMINDERS -----------------
