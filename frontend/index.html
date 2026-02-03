@@ -1470,15 +1470,16 @@ db.collection("bookings")
 async function createBookingSecure(channel) {
   try {
     const payload = {
-      style: selectedStyle,
-      length: selectedLength,
-      date: clientDate.value,
-      time: clientTime.value,
-      clientName: clientName.value,
-      clientPhone: clientPhone.value,
-      clientEmail: clientEmail.value || null,
-      method: channel
-    };
+  style: selectedStyle,
+  length: selectedLength,
+  price: selectedPrice, // ✅ ADD THIS
+  date: clientDate.value,
+  time: clientTime.value,
+  clientName: clientName.value,
+  clientPhone: clientPhone.value,
+  email: clientEmail.value || "mumsybraidsstudio@gmail.com", // ✅ FIX KEY
+  method: channel
+};
 
     const response = await fetch(
       "https://us-central1-mumsy-braids-booking.cloudfunctions.net/createBooking",
