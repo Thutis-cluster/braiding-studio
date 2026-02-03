@@ -25,65 +25,54 @@ async function sendWhatsApp(phone, message) {
 // -------------------- CREATE BOOKING --------------------
 exports.createBooking = functions.https.onRequest((req, res) => {
   cors(req, res, async () => {
-    if (req.method === "OPTIONS") return res.status(204).send("");
-    if (req.method !== "POST") return res.status(405).send("Method Not Allowed");
 
-    try {
-      const { style, length, price, clientName, clientPhone, date, time, method, email } = req.body;
+    const data = req.method === "POST" ? req.body : req.query;
 
-      if (!style || !price || !clientName || !clientPhone || !date || !time || !email) {
-        return res.status(400).send("Missing required fields");
-      }
+    const {
+      style,
+      length,
+      price,
+      clientName,
+      clientPhone,
+      date,
+      time,
+      method,
+      email
+    } = data;
 
-      // Save booking in Firestore
-      const bookingRef = await db.collection("bookings").add({
-        style,
-        length,
-        price,
-        clientName,
-        clientPhone,
-        clientEmail: email,
-        date,
-        time,
-        method,
-        status: "Pending",
-        paymentStatus: "Deposit Unpaid",
-        createdAt: admin.firestore.FieldValue.serverTimestamp()
-      });
-
-      console.log("✅ Booking created with ID:", bookingRef.id);
-
-      // Initialize Paystack
-      const secret = functions.config().paystack?.secret || process.env.PAYSTACK_SECRET;
-      if (!secret) throw new Error("Paystack secret key not set.");
-
-      const response = await axios.post(
-        "https://api.paystack.co/transaction/initialize",
-        {
-          email,
-          amount: Number(price) * 100,
-          metadata: { bookingId: bookingRef.id, type: "deposit" }
-        },
-        { headers: { Authorization: `Bearer ${secret}` } }
-      );
-
-      const { authorization_url, reference } = response.data.data;
-
-      // Update booking with payment reference
-      await bookingRef.update({ paymentReference: reference });
-
-      // 🔹 Redirect user to Paystack directly
-      return res.status(200).json({
-  authorization_url,
-  reference,
-  bookingId: bookingRef.id
-});
-
-
-    } catch (err) {
-      console.error("❌ Error in createBooking:", err.response?.data || err.message);
-      return res.status(500).send("Booking failed. Please try again.");
+    if (!style || !price || !clientName || !clientPhone || !date || !time || !email) {
+      return res.status(400).send("Missing required fields");
     }
+
+    const bookingRef = await db.collection("bookings").add({
+      style,
+      length,
+      price: Number(price),
+      clientName,
+      clientPhone,
+      clientEmail: email,
+      date,
+      time,
+      method,
+      status: "Pending",
+      paymentStatus: "Deposit Unpaid",
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    const secret = functions.config().paystack.secret;
+
+    const response = await axios.post(
+      "https://api.paystack.co/transaction/initialize",
+      {
+        email,
+        amount: Number(price) * 100,
+        metadata: { bookingId: bookingRef.id, type: "deposit" }
+      },
+      { headers: { Authorization: `Bearer ${secret}` } }
+    );
+
+    // 🔥 THIS is what makes Paystack open
+    return res.redirect(response.data.data.authorization_url);
   });
 });
 
