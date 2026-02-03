@@ -1,22 +1,29 @@
-const express = require("express");
+// index.js
+const functions = require("firebase-functions");
 const admin = require("firebase-admin");
+const twilio = require("twilio");
 const axios = require("axios");
-const cors = require("cors");
-require("dotenv").config();
+const cors = require("cors")({ origin: true }); // allow all origins
 
-const app = express();
-app.use(cors());
-app.use(express.json());
-
-// ✅ INIT FIREBASE ADMIN ONCE
-admin.initializeApp({
-  credential: admin.credential.applicationDefault(),
-});
-
+admin.initializeApp();
 const db = admin.firestore();
 
-// ---------------- CREATE BOOKING (PAYSTACK DEPOSIT) ----------------
-app.get("/create-booking", async (req, res) => {
+// -------------------- TWILIO CONFIG --------------------
+const client = twilio(functions.config().twilio.sid, functions.config().twilio.token);
+const TWILIO_SMS = functions.config().twilio.phone;
+const TWILIO_WHATSAPP = "whatsapp:+14155238886";
+
+// -------------------- HELPERS --------------------
+async function sendSms(phone, message) {
+  await client.messages.create({ body: message, from: TWILIO_SMS, to: phone });
+}
+
+async function sendWhatsApp(phone, message) {
+  await client.messages.create({ body: message, from: TWILIO_WHATSAPP, to: "whatsapp:" + phone });
+}
+
+// -------------------- CREATE BOOKING --------------------
+app.post("/initiate-payment", async (req, res) => {
   try {
     const {
       style,
@@ -28,12 +35,13 @@ app.get("/create-booking", async (req, res) => {
       time,
       method,
       email
-    } = req.query;
+    } = req.body;
 
     if (!style || !price || !clientName || !clientPhone || !date || !time || !email) {
-      return res.status(400).send("Missing required fields");
+      return res.status(400).json({ error: "Missing required fields" });
     }
 
+    // 1️⃣ Save booking first
     const bookingRef = await db.collection("bookings").add({
       style,
       length,
@@ -49,7 +57,8 @@ app.get("/create-booking", async (req, res) => {
       createdAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
-    const paystackRes = await axios.post(
+    // 2️⃣ Initialize Paystack
+    const response = await axios.post(
       "https://api.paystack.co/transaction/initialize",
       {
         email,
@@ -66,17 +75,110 @@ app.get("/create-booking", async (req, res) => {
       }
     );
 
-    // 🚀 Redirect user to Paystack
-    return res.redirect(paystackRes.data.data.authorization_url);
+    // 3️⃣ Return popup data
+    res.json({
+      access_code: response.data.data.access_code,
+      reference: response.data.data.reference,
+      bookingId: bookingRef.id
+    });
 
   } catch (err) {
-    console.error("Create booking error:", err);
-    return res.status(500).send("Payment initialization failed");
+    console.error("Init payment error:", err);
+    res.status(500).json({ error: "Payment init failed" });
   }
 });
 
-// ---------------- START SERVER ----------------
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log("🚀 Server running on port", PORT);
+// -------------------- PAYSTACK WEBHOOK --------------------
+exports.paystackWebhook = functions.https.onRequest(async (req, res) => {
+  const paystackSignature = req.headers['x-paystack-signature'];
+  const secret = functions.config().paystack.secret;
+
+  const crypto = require('crypto');
+  const hash = crypto.createHmac('sha512', secret).update(JSON.stringify(req.body)).digest('hex');
+  if (hash !== paystackSignature) return res.status(400).send('Invalid signature');
+
+  const event = req.body;
+  if (event.event !== 'charge.success') return res.status(200).send('Event ignored');
+
+  const transaction = event.data;
+  const bookingId = transaction.metadata.bookingId;
+  if (!bookingId) return res.status(400).send('Missing bookingId');
+
+  try {
+    const bookingRef = db.collection("bookings").doc(bookingId);
+    const bookingSnap = await bookingRef.get();
+    const booking = bookingSnap.data();
+
+    let updateData = {};
+
+    if (transaction.metadata.type === "deposit") {
+      // Deposit paid
+      updateData = {
+        paymentStatus: "Deposit Paid",
+        depositPaid: transaction.amount / 100,
+        balanceRemaining: booking.balanceRemaining,
+        verified: true
+      };
+    } else if (transaction.metadata.type === "balance") {
+      // Balance paid
+      updateData = {
+        balanceRemaining: 0,
+        paymentStatus: "Fully Paid"
+      };
+    }
+
+    await bookingRef.update(updateData);
+
+    // Send confirmation message
+    const message = `✅ Booking confirmed!\nHi ${booking.clientName}, your ${booking.style} (${booking.length}) appointment is confirmed.\n📅 ${booking.date}\n🕒 ${booking.time}`;
+
+    if (booking.method === "whatsapp") await sendWhatsApp(booking.clientPhone, message);
+    else await sendSms(booking.clientPhone, message);
+
+    console.log(`Booking ${bookingId} payment processed. Type: ${transaction.metadata.type}`);
+    res.status(200).send('Webhook processed');
+
+  } catch (err) {
+    console.error("Error processing webhook:", err);
+    res.status(500).send('Internal Server Error');
+  }
 });
+
+// -------------------- 5-HOUR REMINDER --------------------
+exports.sendFiveHourReminders = functions.pubsub
+  .schedule("every 5 minutes")
+  .onRun(async () => {
+    const now = admin.firestore.Timestamp.now();
+    const snapshot = await db.collection("bookings")
+      .where("status", "==", "Accepted")
+      .where("reminderSent", "==", false)
+      .where("reminderAt", "<=", now)
+      .get();
+
+    if (snapshot.empty) return null;
+
+    for (const doc of snapshot.docs) {
+      const booking = doc.data();
+      const message = `⏰ Reminder\nHi ${booking.clientName}, your ${booking.style} (${booking.length}) appointment is in 5 hours.\n📅 ${booking.date}\n🕒 ${booking.time}`;
+
+      try {
+        if (booking.method === "whatsapp") await sendWhatsApp(booking.clientPhone, message);
+        else await sendSms(booking.clientPhone, message);
+
+        await db.collection("reminderLogs").add({
+          bookingId: doc.id,
+          clientName: booking.clientName,
+          phone: booking.clientPhone,
+          method: booking.method,
+          sentAt: admin.firestore.FieldValue.serverTimestamp(),
+          type: "5-hour",
+        });
+
+        await doc.ref.update({ reminderSent: true });
+      } catch (err) {
+        console.error("Reminder failed for", booking.clientPhone, err);
+      }
+    }
+
+    return null;
+  });
