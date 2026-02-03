@@ -742,11 +742,11 @@ input:focus, select:focus {
 
 
   <button class="button" onclick="showScreen('date',4)">Back</button>
-<button class="button submit-btn" onclick="createBookingSecure('sms')">
+<button class="button submit-btn" onclick="payDeposit('sms')">
   ✅ Confirm Booking (SMS)
 </button>
 
-<button class="button submit-btn" onclick="createBookingSecure('whatsapp')">
+<button class="button submit-btn" onclick="cpayDeposit('whatsapp')">
   📱 Send Booking on WhatsApp
 </button>
 </div>
@@ -1379,7 +1379,7 @@ function validateClientForm() {
       alert("❌ Error saving booking.");
       console.error(err);
     });
-}
+} -----------*/
 
 function payDeposit() {
   if (paymentInProgress) return;
@@ -1429,7 +1429,7 @@ onClose: function () {
   });
 
   handler.openIframe();
-} ------*/
+}
 
 // 2️⃣ Email send function
 function sendReceiptEmail(booking, bookingId) {
