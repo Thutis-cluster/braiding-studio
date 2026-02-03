@@ -72,7 +72,12 @@ async function sendWhatsApp(phone, message) {
       await bookingRef.update({ paymentReference: reference });
 
       // 🔹 Redirect user to Paystack directly
-      return res.redirect(authorization_url);
+      return res.status(200).json({
+  authorization_url,
+  reference,
+  bookingId: bookingRef.id
+});
+
 
     } catch (err) {
       console.error("❌ Error in createBooking:", err.response?.data || err.message);
