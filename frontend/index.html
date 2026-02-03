@@ -1480,9 +1480,8 @@ function createBookingSecure(channel) {
     method: channel
   });
 
-  // 🚀 THIS triggers backend redirect
   window.location.href =
-    "https://us-central1-mumsy-braids-booking.cloudfunctions.net/createBooking?" +
+    "https://YOUR-RENDER-APP.onrender.com/create-booking?" +
     params.toString();
 }
 
