@@ -9,9 +9,10 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-functions-compat.js"></script>
-
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
+
+<!---- Paystack SDKs ------>
+<script src="https://js.paystack.co/v1/inline.js"></script>
 
   <!-------- Emailjs ---------->
   <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
@@ -607,17 +608,7 @@ input:focus, select:focus {
   font-weight: bold;
   box-shadow: 0 10px 25px rgba(192,57,43,0.4);
 }
-
-      .card {
-      background: white;
-      padding: 30px;
-      border-radius: 18px;
-      max-width: 380px;
-      text-align: center;
-      box-shadow: 0 10px 30px rgba(0,0,0,.15);
-    }
-    h2 { color: #27AE60; }
-  
+ 
 </style>
 </head>
 
@@ -742,13 +733,14 @@ input:focus, select:focus {
 
 
   <button class="button" onclick="showScreen('date',4)">Back</button>
-<button class="button submit-btn" onclick="payDeposit('sms')">
+<button class="button submit-btn" onclick="handleBooking('sms')">
   ✅ Confirm Booking (SMS)
 </button>
 
-<button class="button submit-btn" onclick="cpayDeposit('whatsapp')">
+<button class="button submit-btn" onclick="handleBooking('whatsapp')">
   📱 Send Booking on WhatsApp
 </button>
+
 </div>
 
 <div id="confirmation" class="screen">
@@ -771,18 +763,7 @@ input:focus, select:focus {
   <p>Cancellation: 24h notice required</p>
   <button class="button" onclick="showScreen('client',5)">Back</button>
   <button class="button" onclick="showScreen('home',1)">Done</button>
-  <button class="button" onclick="payRemainingBalance()">
-  💳 Pay Remaining Balance
-</button>
-
 </div>
-
-   <div class="card">
-    <h2>✅ Deposit Received</h2>
-    <p>Your booking is being confirmed.</p>
-    <p>You’ll receive WhatsApp / SMS shortly 💚</p>
-    <p>You may close this page.</p>
-  </div>
 
   <!-- Admin Login Modal -->
 <div id="adminLoginModal" class="modal">
@@ -1379,7 +1360,7 @@ function validateClientForm() {
       alert("❌ Error saving booking.");
       console.error(err);
     });
-} -----------*/
+}  ------*/
 
 function payDeposit() {
   if (paymentInProgress) return;
@@ -1443,7 +1424,6 @@ function sendReceiptEmail(booking, bookingId) {
       length: booking.length,
       price: booking.price,
       deposit: booking.depositPaid,
-      balance: booking.balanceRemaining, // 👈 ADD
       date: booking.date,
       time: booking.time,
     }
@@ -1467,35 +1447,47 @@ db.collection("bookings")
     });
   });
   
-function createBookingSecure(channel) {
-  const params = new URLSearchParams({
+function saveBooking(paymentData = {}) {
+  if (!bookingMethod) {
+    alert("❌ Booking method missing");
+    return;
+  }
+
+  const booking = {
     style: selectedStyle,
     length: selectedLength,
     price: selectedPrice,
-    date: clientDate.value,
-    time: clientTime.value,
-    clientName: clientName.value,
-    clientPhone: clientPhone.value,
-    email: clientEmail.value || "customer@mumsybraids.com",
-    method: channel
-  });
+    timeEstimate: selectedTimeEstimate,
 
-  window.location.href =
-    "https://braiding-studioo..onrender.com/create-booking?" +
-    params.toString();
+    clientName: document.getElementById("clientName").value,
+    clientPhone: document.getElementById("clientPhone").value,
+    clientEmail: document.getElementById("clientEmail").value,
+
+    date: document.getElementById("clientDate").value,
+    time: document.getElementById("clientTime").value,
+
+    method: bookingMethod, // ✅ REQUIRED BY RULES
+    status: "Pending",
+
+    depositPaid: paymentData.depositPaid || 0,
+    balanceRemaining: paymentData.balanceRemaining || selectedPrice,
+    paymentReference: paymentData.paymentReference || null,
+    paymentStatus: paymentData.paymentStatus || "Unpaid",
+
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+
+  /*------  db.collection("bookings").add(booking)
+    .then(docRef => {
+      booking.id = docRef.id;
+      localStorage.setItem("latestBooking", JSON.stringify(booking));
+      showScreen("confirmation", 5);
+    })
+    .catch(err => {
+      console.error("🔥 Firestore write blocked:", err);
+      alert("❌ Failed to save booking");
+    });  -----*/
 }
-
-
-  async function payRemainingBalance() {
-  const booking = JSON.parse(localStorage.getItem("latestBooking"));
-  if (!booking) return alert("Booking not found");
-
-  const callable = firebase.functions().httpsCallable("createBalancePayment");
-  const res = await callable({ bookingId: booking.id });
-
-  window.location.href = res.data.authorization_url;
-}
-
 
 function getMinutesFromEstimate(estimate) {
   // Example: "3 – 4 hours" → take MAX value
