@@ -22,7 +22,8 @@ async function sendWhatsApp(phone, message) {
   await client.messages.create({ body: message, from: TWILIO_WHATSAPP, to: "whatsapp:" + phone });
 }
 
-// -------------------- CREATE BOOKING --------------------exports.createBooking = functions.https.onRequest((req, res) => {
+// -------------------- CREATE BOOKING --------------------
+exports.createBooking = functions.https.onRequest((req, res) => {
   cors(req, res, async () => {
     if (req.method === "OPTIONS") return res.status(204).send("");
     if (req.method !== "POST") return res.status(405).send("Method Not Allowed");
