@@ -1295,54 +1295,36 @@ function validateClientForm() {
   });
 }
 
-function payDeposit() {
+async function payDeposit() {
   if (paymentInProgress) return;
   paymentInProgress = true;
 
-  document.querySelectorAll(".submit-btn").forEach(btn => {
-    btn.disabled = true;
-  });
+  document.querySelectorAll(".submit-btn").forEach(b => b.disabled = true);
 
-  const emailInput = document.getElementById("clientEmail").value.trim();
-  const email = emailInput !== "" ? emailInput : "customer@mumsybraids.com";
+  try {
+    const fn = firebase.functions().httpsCallable("createBooking");
 
-  const deposit = getDeposit(selectedPrice);
+    const res = await fn({
+      style: selectedStyle,
+      length: selectedLength,
+      price: selectedPrice,
+      clientName: document.getElementById("clientName").value,
+      clientPhone: document.getElementById("clientPhone").value,
+      date: document.getElementById("clientDate").value,
+      time: document.getElementById("clientTime").value,
+      method: bookingMethod,
+      email: document.getElementById("clientEmail").value || "customer@mumsybraids.com"
+    });
 
-  /*------- const handler = PaystackPop.setup({
-    key: "pk_test_b509dd03ae654c59a3449ed06766fe904b500d0e",
-    email: email,
-    amount: deposit * 100,
-    currency: "ZAR",
-    ref: "MUMSY_" + Date.now(),
+    // ✅ REDIRECT TO PAYSTACK (NOT POPUP)
+    window.location.href = res.data.authorization_url;
 
-      metadata: {
-    custom_fields: [
-      { display_name: "Client Name", value: document.getElementById("clientName").value },
-      { display_name: "Style", value: selectedStyle },
-      { display_name: "Date", value: document.getElementById("clientDate").value },
-      { display_name: "Time", value: document.getElementById("clientTime").value }
-    ]
-  },
-
-    callback: function (res) {
-     console.log("💳 Payment success:", res);
-
-      saveBooking({
-        depositPaid: deposit,
-        balanceRemaining: getBalance(selectedPrice),
-        paymentReference: res.reference,
-        paymentStatus: "Deposit Paid"
-      });
-    },
-
-onClose: function () {
-  paymentInProgress = false;
-  document.querySelectorAll(".submit-btn").forEach(btn => btn.disabled = false);
-  alert("❌ Payment cancelled. Booking not completed.");
-}
-  }); ---*/
-
-  handler.openIframe();
+  } catch (err) {
+    console.error("Payment init failed:", err);
+    alert("❌ Could not start payment");
+    paymentInProgress = false;
+    document.querySelectorAll(".submit-btn").forEach(b => b.disabled = false);
+  }
 }
 
 // 2️⃣ Email send function
