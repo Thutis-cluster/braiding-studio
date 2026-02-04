@@ -44,23 +44,63 @@ function validateEmail(email) {
 }
 
 // -------------------- CREATE BOOKING --------------------
-const createBooking = firebase.functions().httpsCallable("createBooking");
+exports.createBooking = functions.https.onCall(async (data) => {
+  try {
+    const { style, length, price, clientName, clientPhone, date, time, method, email } = data;
 
-const res = await createBooking({
-  style: selectedStyle,
-  length: selectedLength,
-  price: selectedPrice,
-  clientName,
-  clientPhone,
-  date,
-  time,
-  method: bookingMethod,
-  email: clientEmail
+    // 1️⃣ Validate all fields
+    if (!style || !length || !price || !clientName || !clientPhone || !date || !time || !email) {
+      throw new functions.https.HttpsError("invalid-argument", "Missing required fields");
+    }
+
+    const validatedPhone = validatePhone(clientPhone);
+    const validatedEmail = validateEmail(email);
+    const bookingPrice = Number(price);
+    if (isNaN(bookingPrice) || bookingPrice <= 0) {
+      throw new functions.https.HttpsError("invalid-argument", "Price must be a positive number");
+    }
+
+    // 2️⃣ Calculate reminder time (5 hours before appointment)
+    const bookingTime = new Date(`${date}T${time}`);
+    const reminderAt = admin.firestore.Timestamp.fromDate(new Date(bookingTime.getTime() - 5 * 60 * 60 * 1000));
+
+    // 3️⃣ Create booking in Firestore
+    const bookingRef = await db.collection("bookings").add({
+      style,
+      length,
+      price: bookingPrice,
+      clientName,
+      clientPhone: validatedPhone,
+      clientEmail: validatedEmail,
+      date,
+      time,
+      status: "Pending",
+      method, // 'sms' or 'whatsapp'
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      reminderSent: false,
+      reminderAt,
+    });
+
+    // 4️⃣ Initialize Paystack transaction
+    const amountKobo = Math.round(bookingPrice * 100); // ZAR → Kobo
+    const response = await axios.post(
+      "https://api.paystack.co/transaction/initialize",
+      { email: validatedEmail, amount: amountKobo, metadata: { bookingId: bookingRef.id } },
+      { headers: { Authorization: `Bearer ${functions.config().paystack.secret}` } }
+    );
+
+    const { authorization_url, reference } = response.data.data;
+
+    // 5️⃣ Save Paystack reference
+    await bookingRef.update({ paymentReference: reference });
+
+    return { authorization_url, reference, bookingId: bookingRef.id };
+
+  } catch (err) {
+    console.error("createBooking error:", err.message);
+    throw new functions.https.HttpsError("internal", err.message);
+  }
 });
-
-// redirect user to Paystack
-window.location.href = res.data.authorization_url;
-
 
 // -------------------- PAYSTACK WEBHOOK --------------------
 exports.paystackWebhook = functions.https.onRequest(async (req, res) => {
